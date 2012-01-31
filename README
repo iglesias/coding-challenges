@@ -1,0 +1,16 @@
+This repository is created with the idea of bringing together some of the
+problems I have managed to solve or I am working on from different coding
+contests.
+
+Some of the sources:
+
+- KATTIS. Online judge driven by the CSC department at KTH. Anyone (not required 
+account) can browse the problem statements in the following URL:
+
+  https://kth.kattis.scrool.se/
+
+To look for a problem just introduce the problem's id (the one I use to name the
+files) in the search box at the top right corner of the page. You can also
+browse all the problems on the section "Problems" at the top of the page.
+
+- Hackercup 12. The famous contest run by facebook. 
