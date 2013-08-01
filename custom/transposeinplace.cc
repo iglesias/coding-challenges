@@ -41,7 +41,7 @@ int main()
 	M.num_rows = 2;
 	M.num_cols = 2;
 // 	M.data = static_cast<int*>(std::malloc(sizeof(int)*M.num_rows*M.num_cols));
-	M.data = new int[4];
+	M.data = new int[M.num_rows*M.num_cols];
 
 	if (M.data == NULL)
 		return -1;
