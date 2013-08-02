@@ -4,6 +4,14 @@
 typedef unsigned int uint;
 
 template <typename T>
+void swap(T* lhs, T* rhs)
+{
+	T tmp = *lhs;
+	*lhs = *rhs;
+	*rhs = tmp;
+}
+
+template <typename T>
 struct matrix {
 	uint num_rows;
 	uint num_cols;
@@ -27,19 +35,16 @@ template <typename T>
 void matrix<T>::transpose()
 {
 	for (uint i = 0; i < num_rows-1; i++) {
-		for (uint j = 1; j < num_cols; j++) {
-			T tmp = data[j*num_rows + i];
-			data[j*num_rows + i] = data[i*num_cols + j];
-			data[i*num_cols + j] = tmp;
-		}
+		for (uint j = i+1; j < num_cols; j++)
+			swap(data+(j*num_rows+i), data+(i*num_cols+j));
 	}
 }
 
 int main()
 {
 	matrix<int> M;
-	M.num_rows = 2;
-	M.num_cols = 2;
+	M.num_rows = 5;
+	M.num_cols = 5;
 // 	M.data = static_cast<int*>(std::malloc(sizeof(int)*M.num_rows*M.num_cols));
 	M.data = new int[M.num_rows*M.num_cols];
 
