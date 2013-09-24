@@ -153,10 +153,3 @@ void merge(vector<int>& v, vector<int>& aux, uint start, uint m, uint end)
 		i++, idx++;
 	}
 }
-
-
-void assign(vector<int>& lhs, const vector<int>& rhs)
-{
-	for (uint i=0; i<lhs.size(); i++)
-		lhs[i] = rhs[i];
-}
