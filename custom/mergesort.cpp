@@ -4,7 +4,7 @@
 #include <vector>
 #include <cassert>
 #include <algorithm>
-#include <ctime>
+#include <chrono>
 
 
 using namespace std;
@@ -13,7 +13,7 @@ typedef unsigned int uint;
 
 // main functions
 vector<int> read();
-void mergesort(vector<int>& v, vector<int>& aux, uint start=0, uint end=-1);
+void mergesort(vector<int>& v, vector<int>& aux, uint start, uint end);
 
 // helpers
 void display(const vector<int>& v);
@@ -30,20 +30,22 @@ int main()
 	vector<int> vv(v);
 
 	// sort the vector
-	time_t start, end;
-	time(&start);
-	mergesort(v,aux);
-	time(&end);
-	cout << "Custom mergesort took " << difftime(end,start) << " seconds\n";
+	chrono::time_point<chrono::system_clock> start, end;
+	start = chrono::system_clock::now();
+	mergesort(v,aux,0,v.size()-1);
+	end = chrono::system_clock::now();
+	cout << "Custom mergesort took "
+		 << chrono::duration<double>(end-start).count() << " seconds\n";
 
 	// DEBUG, display the sorted vector
 //	display(v);
 
 	// test that the vector has been correctly sorted
-	time(&start);
+	start = chrono::system_clock::now();
 	sort(vv.begin(), vv.end());
-	time(&end);
-	cout << "STL sort took " << difftime(end,start) << " seconds\n";
+	end = chrono::system_clock::now();
+	cout << "STL sort took         "
+		 << chrono::duration<double>(end-start).count() << " seconds\n";
 	if (v==vv)
 		cout << ":)\n";
 	else
@@ -96,9 +98,6 @@ void merge(vector<int>& v, vector<int>& aux, uint start, uint m, uint end);
 
 void mergesort(vector<int>& v, vector<int>& aux, uint start, uint end)
 {
-	if (end==-1)
-		end = v.size()-1;
-
 	// base cases
 	if (end==start+1)
 	{
@@ -134,22 +133,13 @@ void merge(vector<int>& v, vector<int>& aux, uint start, uint m, uint end)
 	while (i <= m && j <= end)
 	{
 		if (aux[i] <= aux[j])
-		{
-			v[idx] = aux[i];
-			i++, idx++;
-		}
+			v[idx++] = aux[i++];
 		else
-		{
-			v[idx] = aux[j];
-			j++, idx++;
-		}
+			v[idx++] = aux[j++];
 	}
 
 	assert(i>m || j>end);
 
 	while (i <= m)
-	{
-		v[idx] = aux[i];
-		i++, idx++;
-	}
+		v[idx++] = aux[i++];
 }
