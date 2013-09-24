@@ -13,7 +13,7 @@ typedef unsigned int uint;
 
 // main functions
 vector<int> read();
-void mergesort(vector<int>& v, uint start=0, uint end=-1);
+void mergesort(vector<int>& v, vector<int>& aux, uint start=0, uint end=-1);
 
 // helpers
 void display(const vector<int>& v);
@@ -22,6 +22,9 @@ int main()
 {
 	// read input sequence of numbers
 	vector<int> v = read();
+	// auxiliary vector for mergesort
+	vector<int> aux;
+	aux.resize(v.size());
 
 	// vector copy used to test result for correctness
 	vector<int> vv(v);
@@ -29,7 +32,7 @@ int main()
 	// sort the vector
 	time_t start, end;
 	time(&start);
-	mergesort(v);
+	mergesort(v,aux);
 	time(&end);
 	cout << "Custom mergesort took " << difftime(end,start) << " seconds\n";
 
@@ -51,7 +54,7 @@ int main()
 
 vector<int> read()
 {
-	const uint SIZE = 1024*1024;
+	const uint SIZE = 1<<22;
 	char line[SIZE];
 	cin.getline(line, SIZE);
 	// count the number of whitespace characters read
@@ -89,9 +92,9 @@ void display(const vector<int>& v)
 	cout << endl;
 }
 
-void merge(vector<int>& v, uint start, uint m, uint end);
+void merge(vector<int>& v, vector<int>& aux, uint start, uint m, uint end);
 
-void mergesort(vector<int>& v, uint start, uint end)
+void mergesort(vector<int>& v, vector<int>& aux, uint start, uint end)
 {
 	if (end==-1)
 		end = v.size()-1;
@@ -114,27 +117,30 @@ void mergesort(vector<int>& v, uint start, uint end)
 	// compute the middle point
 	uint m = end - (end-start+1)/2;
 
-	mergesort(v,start,m);
-	mergesort(v,m+1,end);
-	merge(v,start,m,end);
+	mergesort(v,aux,start,m);
+	mergesort(v,aux,m+1,end);
+	merge(v,aux,start,m,end);
 }
 
-void merge(vector<int>& v, uint start, uint m, uint end)
+void merge(vector<int>& v, vector<int>& aux, uint start, uint m, uint end)
 {
-	vector<int> ret(v);	// return value
+	for (uint i = start; i <= end; ++i)
+		aux[i] = v[i];
+
 	uint i=start;
 	uint j=m+1;
 	uint idx=start;
+
 	while (i <= m && j <= end)
 	{
-		if (v[i] <= v[j])
+		if (aux[i] <= aux[j])
 		{
-			ret[idx] = v[i];
+			v[idx] = aux[i];
 			i++, idx++;
 		}
 		else
 		{
-			ret[idx] = v[j];
+			v[idx] = aux[j];
 			j++, idx++;
 		}
 	}
@@ -143,18 +149,9 @@ void merge(vector<int>& v, uint start, uint m, uint end)
 
 	while (i <= m)
 	{
-		ret[idx] = v[i];
+		v[idx] = aux[i];
 		i++, idx++;
 	}
-
-	while (j <= end)
-	{
-		ret[idx] = v[j];
-		j++, idx++;
-	}
-
-	assert(idx==end+1);
-	v = ret;
 }
 
 
