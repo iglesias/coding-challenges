@@ -36,12 +36,13 @@ void insertionsort(std::vector<float>& v)
 			swap(v, j, j-1);
 }
 
+std::vector< std::vector<float> > buckets;
+
 void bucketsort(std::vector<float>& v)
 {
 	// number of buckets
 	int N = v.size();
 	// list of buckets
-	std::vector< std::vector<float> > buckets(N);
 
 	// put each element in v inside a bucket
 	for (int i = 0; i < N; i++)
@@ -70,6 +71,10 @@ int main(int argc, char** argv)
 	// assign default value
 	if (N == 0)
 		N = 1e3;
+
+	buckets.resize(N);
+	for (int i = 0; i < N; i++)
+		buckets[i].reserve(10);
 
 	// generate array and sort it
 	std::vector<float> v0 = uniform(N);
