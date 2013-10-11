@@ -10,9 +10,7 @@ using namespace std;
 
 double sell(double money, double price)
 {
-  double x = money - money*0.03;
-  x = floor(x*100)/100;
-  return x*price;
+  return floor(100.0*(price*(money - money*0.03)))/100.0;
 }
 
 int main()
