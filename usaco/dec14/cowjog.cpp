@@ -1,3 +1,5 @@
+// http://usaco.org/index.php?page=viewproblem2&cpid=489
+
 #include <fstream>
 #include <iostream>
 #include <vector>
