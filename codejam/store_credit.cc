@@ -1,23 +1,8 @@
-// {{{ Boilerplate Code <--------------------------------------------------
+// code.google.com/codejam/contest/351101/dashboard
 
 #include <algorithm>
-#include <bitset>
-#include <cmath>
 #include <cstdio>
-#include <cstdlib>
-#include <ctime>
-#include <deque>
-#include <functional>
-#include <iomanip>
 #include <iostream>
-#include <list>
-#include <map>
-#include <numeric>
-#include <queue>
-#include <set>
-#include <sstream>
-#include <stack>
-#include <utility>
 #include <vector>
 
 #define   FOR(i, a, b)    for ( auto i = (a) ; i < (b) ; ++i )
@@ -25,11 +10,6 @@
 #define   ALL(a)          (a).begin(), (a).end()
 
 using namespace std;
-
-typedef pair< int, int >  ii;
-typedef long long         ll;
-
-// }}}
 
 int main()
 {
@@ -58,7 +38,11 @@ int main()
     }
 
     auto it1 = find(ALL(v), w[i]);
-    auto it2 = find(ALL(v), C-w[i]);
+    auto it2 = it1;
+    if (2*w[i] == C)
+      it2 = find(it1++, v.end(), C-w[i]);
+    else
+      it2 = find(ALL(v), C-w[i]);
 
     vector<int> idxs(2);
     idxs[0] = it1 - v.begin() + 1;
