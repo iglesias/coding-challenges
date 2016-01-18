@@ -123,12 +123,12 @@ string BellmanFord()
   
   // relax edges repeatedly
   REP(i, W*H) REP(j, g.size())
-    {
-      vertex u = g[j].src;
-      vertex v = g[j].dst;
-      int w = g[j].w;
-      if (dists[u.idx()] + w < dists[v.idx()]) dists[v.idx()] = dists[u.idx()] + w;
-    }
+  {
+    vertex u = g[j].src;
+    vertex v = g[j].dst;
+    int w = g[j].w;
+    if (dists[u.idx()] + w < dists[v.idx()]) dists[v.idx()] = dists[u.idx()] + w;
+  }
 
   // check for negative-weight cycles
   REP(j, g.size())
