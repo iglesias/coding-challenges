@@ -1,4 +1,3 @@
-$ cat harry_test_2018_H.cpp
 #include <cassert>
 #include <functional>
 #include <iostream>
