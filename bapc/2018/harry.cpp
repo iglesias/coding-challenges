@@ -1,6 +1,6 @@
 // g++ -std=c++11 -Wall -Wextra -o harry harry.cpp
 //
-// Graph data from bapc website and play:
+// Grab data from bapc website and play:
 // for file in `ls -v *.in`; do echo $file && ./harry < $file > ${file::-3}.out && diff -q ${file::-3}.ans ${file::-3}.out; done
 
 #include <array>
@@ -23,8 +23,8 @@ using cost = uint;
 
 enum class objective : bool { bed = 0, run = 1 };
 
-#define BED (static_cast<size_t>(objective::bed))
-#define RUN (static_cast<size_t>(objective::run))
+constexpr size_t BED = static_cast<size_t>(objective::bed);
+constexpr size_t RUN = static_cast<size_t>(objective::run);
 
 size_t other(objective obj)
 {
