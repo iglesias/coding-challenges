@@ -1,33 +1,26 @@
 // {{{ Boilerplate Code <--------------------------------------------------
 
-#include <algorithm>
-#include <bitset>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
-#include <deque>
-#include <functional>
-#include <iomanip>
-#include <iostream>
-#include <list>
-#include <map>
-#include <numeric>
-#include <queue>
-#include <set>
-#include <sstream>
-#include <stack>
-#include <utility>
-#include <vector>
+#include <bits/stdc++.h>
+
+using namespace std;
 
 #define   FOR(i, a, b)    for ( typeof(a) i = (a) ; i < (b) ; ++i )
 #define   REP(i, n)       FOR(i, 0, n)
 #define   ALL(a)          (a).begin(), (a).end()
 
-using namespace std;
+#define dbp(...) dblog(#__VA_ARGS__, __VA_ARGS__)
 
-typedef pair< int, int >  ii;
-typedef long long         ll;
+template<typename... Args>
+void dblog(std::string vars, Args&&... values)
+{
+    std::cout << "[" << vars << " = ";
+    std::string delim = "";
+    (..., (std::cout << delim << values, delim = ", "));
+    std::cout << "]\n";
+}
+
+using ii = std::pair<int, int>;
+using ll = long long;
 
 // }}}
 
