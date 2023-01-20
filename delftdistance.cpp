@@ -1,3 +1,5 @@
+// g++ -std=c++20 -Wall -Wextra -pedantic -o delftdistance delftdistance.cpp
+
 #include <bits/stdc++.h>
 
 #define dbp(...) dblog(#__VA_ARGS__, __VA_ARGS__)
@@ -13,7 +15,7 @@ void dblog(std::string vars, Args&&... values)
 
 // maximum number of rows and columns of buildings
 constexpr int HMAX{700};
-constexpr int YMAX{700};
+constexpr int WMAX{700};
 // side length of square buildings and diameter of round towers in meters
 constexpr int L{10};
 
@@ -22,8 +24,10 @@ namespace
   struct p
   {
     int x, y;
+    p() : x(0), y() {}
     p(int _x, int _y) : x(_x), y(_y) {}
     p(const p &other) : x(other.x), y(other.y) {}
+    p& operator=(const p &other) { x = other.x; y = other.y; return *this; } // For path reconstruction (debug)
     bool operator==(const p &other) const { return x==other.x && y==other.y; }
     friend std::ostream& operator<<(std::ostream &os, const p &point)
     {
@@ -39,7 +43,7 @@ namespace std
     size_t operator()(const ::p &p) const
     {
       assert(0 <= p.x && p.x <= HMAX*L);
-      assert(0 <= p.y && p.y <= YMAX*L);
+      assert(0 <= p.y && p.y <= WMAX*L);
       // 7000 is the max value, which has 4 digits, FIXME detect #digits from constants
       // hash by shifting one of the coordinates and having both in a decimal number
       // example: x = 525, y=32 -> hash = 5250032
@@ -53,9 +57,9 @@ using vertex_t = ::p;
 struct edge_dest_t
 {
   vertex_t u;
-  float dist;
+  double dist;
 
-  edge_dest_t(vertex_t _u, float _d) : u(_u), dist(_d) {}
+  edge_dest_t(vertex_t _u, double _d) : u(_u), dist(_d) {}
 
   bool operator>(const edge_dest_t &other) const
   {
@@ -69,14 +73,14 @@ struct edge_dest_t
 };
 
 void build_graph();
-float shortest_path();
+double shortest_path();
 
 int h, w;
 std::vector<std::string> world;
 
 int main()
 {
-  dbp(std::numbers::pi);
+  std::cout << std::fixed << std::setprecision(10) << std::numbers::pi << std::endl;
   const ::p p0(0,0);
   const std::hash<::p> hash;
   dbp(hash(p0));
@@ -85,7 +89,6 @@ int main()
   dbp(hash(::p(525, 32)));
 
   std::cin >> h >> w;
-  dbp(h, w);
   std::string str;
   std::getline(std::cin, str);
   while(std::getline(std::cin, str))
@@ -95,21 +98,22 @@ int main()
   std::cout << std::fixed << std::setprecision(10) << shortest_path() << std::endl;
 }
 
-std::unordered_map<vertex_t, std::unordered_map<vertex_t, float>> graph;
+std::unordered_map<vertex_t, std::unordered_map<vertex_t, double>> graph;
 
-void add_edge(const ::vertex_t &from, const ::vertex_t &to, float dist)
+void add_edge(const ::vertex_t &from, const ::vertex_t &to, double dist)
 {
+  //TODO for debugging could help to verify that the Euclidean distance between from and to is equal to dist.
   static bool toggle{false};
-  dbp(from, to);
 
   if(graph.contains(from))
   {
-    assert(!graph.at(from).contains(to));
+    //dbp(from, to);
+    //assert(!graph.at(from).contains(to)); // ♥ ♥ ♥
     graph.at(from).insert({to, dist});
   }
   else
   {
-    graph.insert({from, std::unordered_map<vertex_t, float>({{to, dist}})});
+    graph.insert({from, std::unordered_map<vertex_t, double>({{to, dist}})});
   }
 
   if(!toggle)
@@ -152,8 +156,11 @@ void build_graph()
   }
   */
 
+  assert(L%2 == 0);
+
   for(int hi{1}; hi<=h; hi++) for(int wi{1}; wi<=w; wi++)
   {
+    //dbp(hi, wi);
     assert(hi<=int(world.size()));
     assert(wi<=int(world[hi-1].length()));
     if(world[hi-1][wi-1]=='x')
@@ -173,60 +180,121 @@ void build_graph()
       // edges to the cell at the bottom.
       if(hi<h and world[hi][wi-1]=='o')
       {
-        // horizontal at the bottom.
+        // A - horizontal edges of L/2 length at the bottom,
+        // from bottom-left corner to midpoint, and
         add_edge(vertex_t(hi*L, (wi-1)*L), vertex_t(hi*L, (wi-1)*L+L/2), L/2);
+        // from bottom-right corner to midpoint.
         add_edge(vertex_t(hi*L, wi*L),     vertex_t(hi*L, wi*L-L/2),     L/2);
         // vertical on the sides.
         //TODO
       }
 
       // edges to the cell at the right.
-      if(wi<h and world[hi-1][wi]=='o')
+      if(wi<w and world[hi-1][wi]=='o')
       {
-        // horizontal top and bottom, from the right corners of the
+        // OJO! These ones seem to be the same as A; only if the
+        // cell on top of the one with 'o' was also an X...
+        //
+        // B - horizontal top and bottom, from the right corners of the
         // square in the current cell to the top and bottom midpoints
         // of the round tower to the right:
-        add_edge(vertex_t((hi-1)*L, wi*L), vertex_t((hi-1)*L, wi*L+L/2), L/2);
-        add_edge(vertex_t(    hi*L, wi*L), vertex_t(    hi*L, wi*L+L/2), L/2);
-        //TODO vertical on the right from top to midpoint,
-        //and another one from midpoint to bottom
+        //TODO add similar if guards for the rest of  this kind of edges in the other cases
+        if(hi<2 or (world[hi-2][wi-1]=='o' and world[hi-2][wi]=='o'))
+          add_edge(vertex_t((hi-1)*L, wi*L), vertex_t((hi-1)*L, wi*L+L/2), L/2);
+
+        add_edge(vertex_t(hi*L, wi*L), vertex_t(hi*L, wi*L+L/2), L/2);
+
+        // C - vertical on the right from top to midpoint,
+        add_edge(vertex_t((hi-1)*L, wi*L), vertex_t((hi-1)*L+L/2, wi*L), L/2);
+        // and another one from midpoint to bottom
+        add_edge(vertex_t((hi-1)*L+L/2, wi*L), vertex_t(hi*L, wi*L), L/2);
       }
     }
     else
     {
       assert(world[hi-1][wi-1]=='o');
       // own cell edges.
-      // Special case for the last cell reaching the goal at the south-east corner:
-      ///TODO
       /// first quadrant
-      add_edge(vertex_t((hi-1)*L, wi*L-L/2), vertex_t(hi*L-L/2, wi*L),     std::numbers::pi*L/2);
+      add_edge(vertex_t((hi-1)*L, wi*L-L/2), vertex_t(hi*L-L/2, wi*L),     std::numbers::pi*L/4);
       /// second quadrant
-      add_edge(vertex_t((hi-1)*L, wi*L-L/2), vertex_t(hi*L-L/2, (wi-1)*L), std::numbers::pi*L/2);
+      add_edge(vertex_t((hi-1)*L, wi*L-L/2), vertex_t(hi*L-L/2, (wi-1)*L), std::numbers::pi*L/4);
       /// third quadrant
-      add_edge(vertex_t(hi*L-L/2, (wi-1)*L), vertex_t(hi*L, wi*L-L/2),     std::numbers::pi*L/2);
+      add_edge(vertex_t(hi*L-L/2, (wi-1)*L), vertex_t(hi*L, wi*L-L/2),     std::numbers::pi*L/4);
       /// fourth quadrant
-      add_edge(vertex_t(hi*L, wi*L-L/2),     vertex_t(hi*L-L/2, wi*L),     std::numbers::pi*L/2);
+      add_edge(vertex_t(hi*L, wi*L-L/2),     vertex_t(hi*L-L/2, wi*L),     std::numbers::pi*L/4);
 
-      // edges to the cell at the bottom.
-      // TODO
-      // edges to the cell at the right.
-      // TODO
+      // edges to the cell at the bottom with a square
+      if(hi<h and world[hi][wi-1]=='x')
+      {
+        assert(false);
+        // F - vertical edges on the left and on the right from midpoints
+        // to top-left corner of the square
+        // TODO
+        // top top-right corners of square
+        // TODO
+
+        // G - horizontal edges at the bottom from midpoint
+        // along the side of the square
+        // from top-left corner to midpoint
+        // TODO
+        // from top-right corner to midpoint
+        // TODO
+      }
+      // vertical edges to a cell at the bottom with another tower.
+      else if(hi<h and world[hi][wi-1]=='o')
+      {
+        add_edge(vertex_t(hi*L-L/2, (wi-1)*L), vertex_t(hi*L+L/2, (wi-1)*L), L);
+        add_edge(vertex_t(hi*L-L/2,     wi*L), vertex_t(hi*L+L/2,     wi*L), L);
+      }
+
+      // edges to a cell on the right with a square.
+      if(wi<w and world[hi-1][wi]=='x')
+      {
+        // D - horizontal edges on top and bottom from midpoint
+        // to top and bottom left corners of the square, respectively
+        if(hi<2 or world[hi-2][wi-1]=='o')
+          add_edge(vertex_t((hi-1)*L, (wi-1)*L+L/2), vertex_t((hi-1)*L, wi*L), L/2);
+
+        add_edge(vertex_t(hi*L, (wi-1)*L+L/2), vertex_t(hi*L, wi*L), L/2);
+
+        // E - vertical edges from midpoint along the side of the square,
+        // from bottom-right corner to midpoint
+        add_edge(vertex_t(hi*L, wi*L), vertex_t(hi*L-L/2, wi*L), L/2);
+        // from top-left corner to midpoint
+        add_edge(vertex_t((hi-1)*L, wi*L), vertex_t((hi-1)*L+L/2, wi*L), L/2);
+      }
+      // horizontal edges to a cell on the right with another tower.
+      else if(wi<w and world[hi-1][wi]=='o')
+      {
+        add_edge(vertex_t((hi-1)*L, wi*L-L/2), vertex_t((hi-1)*L, wi*L+L/2), L);
+        add_edge(vertex_t(hi*L,     wi*L-L/2), vertex_t(hi*L,     wi*L+L/2), L);
+      }
     }
   }
 
-  dbp(graph.size());
+  // Special case to start at the north-west corner:
+  if(world[0][0]=='o')
+    add_edge(vertex_t(0, 0), vertex_t(0, L/2), L/2); 
+
+  // Special case to reach the goal at the south-east corner:
+  if(world[h-1][w-1]=='o')
+    add_edge(vertex_t(h*L-L/2, w*L), vertex_t(h*L, w*L), L/2);
 }
 
-float shortest_path()
+void print_path(const std::unordered_map<vertex_t, vertex_t> pred);
+double shortest_path()
 {
   std::cout << ">> shortest_path()\n";
   std::priority_queue<edge_dest_t, std::vector<edge_dest_t>, std::greater<edge_dest_t>> pq;
 
   // Create a container for distances
   // and initialize all to infinity.
-  std::unordered_map<vertex_t, float> dist;
+  std::unordered_map<vertex_t, double> dist;
   for(const auto &[u, ignore] : graph)
-    dist.insert(std::make_pair(u, std::numeric_limits<float>::max()));
+    dist.insert(std::make_pair(u, std::numeric_limits<double>::max()));
+
+  // Container for path reconstruction.
+  std::unordered_map<vertex_t, vertex_t> pred;
 
   // Initialize queue with starting vertex
   // (top-left corner at distance 0.0).
@@ -236,24 +304,43 @@ float shortest_path()
   while(!pq.empty())
   {
     const vertex_t u{pq.top().u};
-    dbp(u);
     pq.pop();
 
     //Return if destination reached (bottom-right).
+    //TODO probably helps with time, not 100% sure if it is correct solution.
+    /*
     if(u==vertex_t(L*h, L*w))
       return dist.at(u);
+    */
 
     for(const auto &[v, weight] : graph.at(u))
     {
       if(dist.at(v) > dist.at(u) + weight)
       {
         dist.at(v) = dist.at(u) + weight;
+        pred[v] = u;
         pq.push(edge_dest_t(v, dist[v]));
       }
     }
   }
 
-  return -42.;
+  assert(dist.at(vertex_t(L*h, L*w))<std::numeric_limits<double>::max());
+
+  //print_path(pred);
+  return dist.at(vertex_t(L*h, L*w));
+}
+
+// Path reconstruction:
+void print_path(const std::unordered_map<vertex_t, vertex_t> pred)
+{
+  std::cout << "Path: ";
+  vertex_t u_p{vertex_t(L*h, L*w)};
+  do
+  {
+    std::cout << u_p << " <- ";
+    u_p = pred.at(u_p);
+  } while(u_p!=vertex_t(0,0));
+  std::cout << vertex_t(0,0) << std::endl;
 }
 
 //Given a vertex, list of neighbors vertices and distances to them (edges?)
