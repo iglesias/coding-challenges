@@ -22,8 +22,7 @@ std::set<ii> mem;
 
 void falloc(int l)
 {
-//  std::cout << "<< allocation " << l << std::endl;
-  for(auto const &memi : mem)
+  for(auto const& memi : mem)
   {
     const int memi_size{memi.second-memi.first+1};
     if(memi_size>=l)
@@ -44,23 +43,28 @@ void falloc(int l)
 
 void ffree(int x, int l)
 {
-//  std::cout << ">> free " << x << ' ' << l << std::endl;
-  // Look for "overlapping" (digitally) intervals.
+  // Look for "digitally overlapping" intervals.
+  // Actually, not only overlapping, but "direct
+  // neighbors" are merged as well.
+
   std::set<ii>::const_iterator it{mem.cbegin()};
+
+  // skip intervals too far to the left.
   while(it!=mem.cend())
   {
     if(x-1<=it->second) break;
     it++;
   }
 
-  if(it==mem.cend() or x+l-1<it->first)
+///  std::cout << "  it->first=" << it->first << " x=" << x << " l=" << l << std::endl;
+  if(it==mem.cend() or x+l<it->first)
   {
     mem.insert(std::make_pair(x, x+l-1));
     std::cout << l << '\n';
     return;
   }
 
-//  std::cout << "    overlapping interval found" << std::endl;
+///  std::cout << "    overlapping interval found" << std::endl;
 
   // Merge overlapping intervals and
   // compute #cells actually freed.
@@ -68,22 +72,23 @@ void ffree(int x, int l)
   // it points at the left-most
   // interval with some overlap.
   ii to_insert;
-  to_insert.first = it->first;
+  to_insert.first = std::min(x, it->first);
   to_insert.second = std::max(x+l-1, it->second);
 
   std::set<ii> to_erase;
   to_erase.insert(*it);
 
   int actual_l{l};
-  actual_l -= std::min(it->second,x+l-1)-x+1;
-//  std::cout << "    starting actual_l=" << actual_l << std::endl;
+  actual_l -= std::min(it->second,x+l-1)-std::max(it->first,x)+1;
 
   it++;
 
   // go through all intervals completely
   // contained.
-  while(it!=mem.cend() && it->second<=x+l-1)
+///  std::cout << "    it->second=" << it->second  << " x=" << x << " l=" << l << std::endl;
+  while(it!=mem.cend() and it->second<=x+l-1)
   {
+///    std::cout << "    interval completely contained!" << std::endl;
     to_erase.insert(*it);
     actual_l -= it->second-it->first+1;
     it++;
@@ -92,8 +97,10 @@ void ffree(int x, int l)
   // check if there's a right-most
   // overlapping interval not completely
   // contained.
-  if(it!=mem.cend() && it->first-1<=x+l-1)
+///  std::cout << "    it->first=" << it->first << " x+l=" << x+l << " it!=mem.cend()=" << (it!=mem.cend()) << std::endl;
+  if(it!=mem.cend() and it->first-1<=x+l)
   {
+///    std::cout << "   We are here!" << std::endl;
     to_erase.insert(*it);
     actual_l -= x+l-it->first;
     to_insert.second = it->second;
@@ -129,16 +136,18 @@ void solve(int n, int q)
     {
     case 1:
       std::cin >> l;
+///      std::cout << "allocation " << l << std::endl;
       falloc(l);
       break;
     case 2:
       std::cin >> x >> l;
+///      std::cout << "free " << x << ' ' << l << std::endl;
       ffree(x, l);
       break;
     default:
       assert(false);
     }
 
-//    print(mem);
+    //print(mem);
   }
 }
