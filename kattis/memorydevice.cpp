@@ -4,9 +4,9 @@
 //
 // [0, n-1]
 //
-// 0. Didn't consider intervals "touching" wihtout overlapping.
+// 0. Didn't consider intervals "touching" without overlapping.
 // 1. TLE -> use linked list instead of std::set, keeping the
-//    binary search tree (BST) udpated may be too expensive.
+//    binary search tree (BST) updated may be too expensive.
 
 
 using ii = std::pair<int,int>;
@@ -114,9 +114,9 @@ void ffree(int x, int l)
   // check if there's a right-most
   // overlapping interval not completely
   // contained.
-///  std::cout << "    it->first=" << it->first << " x+l=" << x+l << " it!=mem.cend()=" << (it!=mem.cend()) << std::endl;
-  if(std::next(it)!=mem.cend() and std::next(it)->first-1<=x+l)
+  if(std::next(it)!=mem.cend() and std::next(it)->first<=x+l)
   {
+///    std::cout << "    right-most overlapping not completely contained!" << std::endl;
     actual_l -= x+l-std::next(it)->first;
     to_insert.second = std::next(it)->second;
     mem.erase_after(it);
