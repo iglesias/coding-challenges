@@ -11,7 +11,6 @@
 
 using ii = std::pair<int,int>;
 
-
 void solve(int n, int q);
 
 int main()
@@ -25,6 +24,31 @@ int main()
 }
 
 std::forward_list<ii> mem;
+
+// NEXT VERSION: auxiliary data structure with free slots ordered by size.
+struct item
+{
+  using iterator = std::forward_list<ii>::const_iterator;
+
+  size_t s;
+  iterator it;
+
+  item(size_t _s, iterator _it) : s(_s), it(_it) {}
+
+  bool operator<(item const& other) const
+  {
+    if(s == other.s)
+      return it->first < other.it->first;
+    else
+      return s < other.s;
+  }
+
+  bool operator==(item const& other)
+  {
+    return it == other.it;
+  }
+
+};
 
 void falloc(int l)
 {
