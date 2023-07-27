@@ -1,5 +1,7 @@
 #include <bits/stdc++.h>
 
+// sample input at the bottom
+
 using namespace std;
 
 string to_binary(int n, int N)
@@ -89,3 +91,24 @@ int main()
           cout << "Case #" << t+1 << ": " << "IMPOSSIBLE\n";
     }
 }
+
+/*
+4
+3
+360 480
+420 540
+600 660
+3
+0 1440
+1 3
+2 4
+5
+99 150
+1 100
+100 301
+2 5
+150 250
+2
+0 720
+720 1440
+*/
