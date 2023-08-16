@@ -1,3 +1,65 @@
+#include <array>
+#include <cstdint> // uint16_t
+#include <iostream>
+#include <numeric>
+#include <vector>
+
+using namespace std;
+
+
+namespace bits {
+
+vector<vector<int>> gen_subsets(vector<int>& nums, int k) {
+    vector<vector<int>> res;
+    int const n = nums.size();
+    for (int i = 0; i < (1 << n); i++) {
+        if (__builtin_popcount(i) == k) {
+            vector<int> comb;
+            for (int j = 0; j < n; j++) {
+                if (i & (1 << j)) {
+                    comb.push_back(nums[j]);
+                }
+            }
+            res.push_back(comb);
+        }
+    }
+    return res;
+}
+
+}
+
+vector<array<uint16_t, 3>> gen_subsets(vector<int>& nums, int k) {
+    vector<array<uint16_t, 3>> res;
+    int const n = nums.size();
+    if (nums.empty() || n < k) {
+        return res;
+    }
+    vector<int> indices(k);
+    int i, j;
+    for (i = 0; i < k; i++) {
+        indices[i] = i;
+    }
+    while (true) {
+        array<uint16_t, 3> comb;
+        for (i = 0; i < k; i++) {
+            comb[i] = nums[indices[i]];
+        }
+        res.push_back(comb);
+        for (i = k - 1; i >= 0; i--) {
+            if (indices[i] != i + n - k) {
+                break;
+            }
+        }
+        if (i < 0) {
+            break;
+        }
+        indices[i]++;
+        for (j = i + 1; j < k; j++) {
+            indices[j] = indices[j - 1] + 1;
+        }
+    }
+    return res;
+}
 
 uint32_t g_count{0};
 
