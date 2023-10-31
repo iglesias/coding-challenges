@@ -1,8 +1,6 @@
-// {{{ Boilerplate Code <--------------------------------------------------
+// {{{ Boilerplate <--------------------------------------------------
 
 #include <bits/stdc++.h>
-
-using namespace std;
 
 #define   FOR(i, a, b)    for ( typeof(a) i = (a) ; i < (b) ; ++i )
 #define   REP(i, n)       FOR(i, 0, n)
@@ -22,11 +20,9 @@ void dblog(std::string vars, Args&&... values)
 using ii = std::pair<int, int>;
 using ll = long long;
 
-// }}}
+// }}}            <--------------------------------------------------
 
 int main()
 {
-  cout << "Hello template!" << endl;
-
-  return 0;
+  cout << "Hello template!\n";
 }
