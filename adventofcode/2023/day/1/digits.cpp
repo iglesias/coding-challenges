@@ -2,21 +2,35 @@
 
 using uint = unsigned int;
 
-std::vector<std::string> const digits = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
+using namespace std::literals;
 
-char transform_digit(std::string const& digit)
+std::map<std::string_view, char> const strDigit2Char{
+    {"one"sv,   '1'},
+    {"two"sv,   '2'},
+    {"three"sv, '3'},
+    {"four"sv,  '4'},
+    {"five"sv,  '5'},
+    {"six"sv,   '6'},
+    {"seven"sv, '7'},
+    {"eight"sv, '8'},
+    {"nine"sv,  '9'},
+};
+
+// anonymous
+namespace
 {
-  if     (digit=="one")      return '1';
-  else if(digit=="two")      return '2';
-  else if(digit=="three")    return '3';
-  else if(digit=="four")     return '4';
-  else if(digit=="five")     return '5';
-  else if(digit=="six")      return '6';
-  else if(digit=="seven")    return '7';
-  else if(digit=="eight")    return '8';
-  else if(digit=="nine")     return '9';
-  else assert(false);
-}
+
+  template<typename K, typename V>
+  std::vector<K> extract_keys(std::map<K,V> map)
+  {
+    std::vector<K> out;
+    for(auto&& kv : map) out.push_back(kv.first);
+    return out;
+  }
+
+};
+
+auto const digits{::extract_keys(strDigit2Char)};
 
 bool is_digit_prefix(std::string const& try_digit)
 {
@@ -53,7 +67,7 @@ std::string transform(std::string const& in)
       try_digit += in[i];
       if(is_digit(try_digit))
       {
-        out += transform_digit(try_digit);
+        out += strDigit2Char.at(try_digit);
         try_digit = "\0";
       }
       else // without else branch for considering non-overlapping.
