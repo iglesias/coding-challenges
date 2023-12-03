@@ -2,8 +2,12 @@
 
 namespace 
 {
+  // a point in the 2D grid or matrix.
   struct p
   {
+    // row and column,
+    // zero-based indexing and
+    // there'll even be points created whose r and/or c are out of bounds.
     int r, c;
     p(int _r, int _c) : r(_r), c(_c) {}
     p() : r(0), c(0) {}
@@ -11,9 +15,15 @@ namespace
 
   struct number
   {
+    // numbers are contiguous parts rows;
+    // this abstraction is slightly too generic since start.r and end.r
+    // aren't necessarily the same (whereas numbers shall occupy only 1 row), 
+    // it might've become handy if e.g. in part two there could be
+    // numbers placed vertically as well.
     p start, end;
-    int is_part; // -1 -> uninitialized, 0 -> no, 1 -> yes
-    int value;
+    // the next two will be filled during part one and used for part two.
+    int is_part; // -1 -> uninitialized, 0 -> no, 1 -> yes. FIXME std::optional for uninitialized.
+    int value;   // the same applies regarding uninitialized.
     number(p _start, p _end) : start(_start), end(_end), is_part(-1), value(-1) {}
   };
 };
@@ -41,13 +51,14 @@ input_t read()
   return out;
 }
 
+// à la parsing
 std::vector<::number> extract_numbers(input_t const& input)
 {
   std::vector<::number> out;
   unsigned int i{0}, j{0};
-  bool busy{false};
-  ::p start;
-  while(i < input.at(0).length())
+  bool busy{false}; // parsing state, is a number being processed? FIXME rename.
+  ::p start; // FIXME I think this can be scoped better.
+  while(i < input.at(0).length()) // FIXME style one-liner loops
   {
     while(j < input.size())
     {
@@ -129,7 +140,7 @@ int part_numbers_sum(input_t const& input, std::vector<::number>& numbers)
 int part_two(input_t const& input, std::vector<::number> const& numbers)
 {
   int ans{0};
-  for(int i{0}; i < (int)input.size()-1; i++)
+  for(int i{0}; i < (int)input.size()-1; i++)  // FIXME style one-liner loops
     for(int j{0}; j < (int)input[0].length(); j++)
     {
       if(input[i][j] == '*')
