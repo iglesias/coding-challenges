@@ -1,6 +1,7 @@
 // Compiled flagging -std=c++23 with g++ (GCC) 13.2.1 20230801
 
 #include <algorithm>
+#include <format>
 #include <iostream>
 #include <set>
 #include <sstream>
@@ -9,7 +10,7 @@
 
 int main()
 {
-  int part_one_ans{0};
+  auto ans{std::make_pair(0,0)};
   std::vector<int> matching_numbers_per_card;
   std::string line;
   while(std::getline(std::cin, line))
@@ -30,7 +31,7 @@ int main()
     for(auto number : my_numbers)
       if(winning_numbers.contains(number)) matching_numbers_per_card.back()++;
 
-    part_one_ans += matching_numbers_per_card.back() ? (1 << (matching_numbers_per_card.back()-1)) : 0;
+    ans.first += matching_numbers_per_card.back() ? (1 << (matching_numbers_per_card.back()-1)) : 0;
   }
 
   int const num_card_types{static_cast<int>(matching_numbers_per_card.size())};
@@ -39,7 +40,9 @@ int main()
     for(int j{0}; j < matching_numbers_per_card[i]; j++)
       num_cards[i+1+j] += num_cards[i];
 
-  std::cout << "Part one: " << part_one_ans << '\n';
-  std::cout << "Part two: " << std::ranges::fold_left(num_cards, 0, std::plus<int>()) << '\n';
+  ans.second = std::ranges::fold_left(num_cards, 0, std::plus<int>());
+
+  std::cout << std::format("Part one: {}.\n", ans.first);
+  std::cout << std::format("Part two: {}.\n", ans.second);
 }
 
