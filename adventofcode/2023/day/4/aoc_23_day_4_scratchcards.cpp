@@ -1,6 +1,11 @@
-#include <bits/stdc++.h>
+// Compiled flagging -std=c++23 with g++ (GCC) 13.2.1 20230801
 
-#define   ALL(a)          (a).begin(), (a).end()
+#include <algorithm>
+#include <iostream>
+#include <set>
+#include <sstream>
+#include <string>
+#include <vector>
 
 int main()
 {
@@ -35,5 +40,6 @@ int main()
       num_cards[i+1+j] += num_cards[i];
 
   std::cout << "Part one: " << part_one_ans << '\n';
-  std::cout << "Part two: " << std::accumulate(ALL(num_cards), 0) << '\n';
+  std::cout << "Part two: " << std::ranges::fold_left(num_cards, 0, std::plus<int>()) << '\n';
 }
+
