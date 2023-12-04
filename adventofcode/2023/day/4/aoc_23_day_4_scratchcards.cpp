@@ -6,6 +6,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 int main()
@@ -27,9 +28,10 @@ int main()
       while(!ss2.eof()) { int n; ss2 >> n; my_numbers.insert(n); }
     }
 
-    matching_numbers_per_card.push_back(0);
-    for(auto number : my_numbers)
-      if(winning_numbers.contains(number)) matching_numbers_per_card.back()++;
+    // Materializing the intersection (it uses more space than needed).
+    std::vector<int> intersection;
+    std::ranges::set_intersection(winning_numbers, my_numbers, std::back_inserter(intersection));
+    matching_numbers_per_card.push_back(static_cast<int>(intersection.size()));
 
     ans.first += matching_numbers_per_card.back() ? (1 << (matching_numbers_per_card.back()-1)) : 0;
   }
