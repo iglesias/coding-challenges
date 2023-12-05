@@ -135,5 +135,3 @@ int main()
   std::cout << "Part one: " << ans_a << '\n';
   std::cout << "Part two: " << ans_b << '\n';
 }
-
-//g++ -Wall -Wextra -pedantic -o digits digits.cpp
