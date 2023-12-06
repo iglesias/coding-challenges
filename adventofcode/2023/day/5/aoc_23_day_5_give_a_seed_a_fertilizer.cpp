@@ -1,38 +1,159 @@
-#include <bits/stdc++.h>
+// {{{ Boilerplate Code <--------------------------------------------------
 
-using uint = unsigned int;
-using uu   = std::pair<uint, uint>;
+#include <bits/stdc++.h>
+#include <cstdint>
+#include <cxxabi.h>
+#include <queue>
+#include <sstream>
+
+#define dbp(...) dblog(#__VA_ARGS__, __VA_ARGS__)
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, std::vector<T> const& v)
+{
+  int status;
+  char* demangled_name =
+    abi::__cxa_demangle(typeid(T).name(), NULL, NULL, &status);
+  assert(!status);
+  os << "vector<" << demangled_name << ">(";
+  std::free(demangled_name);
+  for(size_t i{0}; i < v.size(); i++)
+    os << v[i] << ((i == v.size()-1)? ")" : ", ");
+  return os;
+}
+
+template<typename... Args>
+void dblog(std::string vars, Args&&... values)
+{
+  std::cout << "[" << vars << " = ";
+  std::string delim = "";
+  (..., (std::cout << delim << values, delim = ", "));
+  std::cout << "]\n";
+}
+
+// }}}
+
+//FIXME try using std::uint_fast32_t brute-forcing the second part,
+//with the interval algorithm unsigned might be not possible
+//using uu = std::pair<uint, uint>;
+using ll = std::pair<long long, long long>;
+//FIXME for readability rename ll to interval or so denoting an interval type
 
 namespace
 {
 
 struct range
 {
-  uint dst, src, len;
+  long long dst, src, len;
   friend std::ostream& operator<<(std::ostream& in, range const& r);
 };
+
+[[maybe_unused]] std::ostream& operator<<(std::ostream& in, range const& r)
+{
+  in << r.dst << ' ' << r.src << ' ' << r.len;
+  return in;
+}
+
 
 struct map
 {
   std::vector<range> ranges;
 
-  uint apply(uint n)
+  long long apply(long long n)
   {
     for(auto const& r : ranges)
       if(r.src <= n and n <= r.src+r.len-1)
         return n-r.src+r.dst;
     return n;
   }
+
+  auto apply(std::queue<ll> q) -> std::queue<ll>
+  {
+    //std::cout << ">> apply with "; dbp(ranges);
+    std::queue<ll> out;
+    while(!q.empty())
+    {
+      //std::cout << ">>>> q has " << q.size() << " elements.\n";
+      ll interval{q.front()};
+      q.pop();
+
+      //std::cout << ">>>> Pop from q"; dbp(interval);
+      assert(interval.second >= interval.first);
+      long long a{interval.first}, b{interval.second};
+      bool mapped{false};
+
+      for(auto const& r : ranges)
+      {
+        //dbp(a, r);
+        if(r.src <= a and a <= r.src+r.len-1)
+        {
+          // Break interval as needed.
+          if(b <= r.src+r.len-1)
+          {
+            //std::cout << ">>>> Push into out"; dbp(a-r.src+r.dst, b-r.src+r.dst);
+            out.push(std::make_pair(a-r.src+r.dst, b-r.src+r.dst));
+          }
+          else
+          {
+            //std::cout << ">>>> Push into out"; dbp(a-r.src+r.dst, r.len-1+r.dst);
+            out.push(std::make_pair(a-r.src+r.dst, r.len-1+r.dst));
+            //std::cout << ">>>> and push into q"; dbp(r.src+r.len, b);
+            q.push(std::make_pair(r.src+r.len, b));
+          }
+          mapped = true;
+          break;
+        }
+        else if(r.src <= b and b <= r.src+r.len-1)
+        {
+          // Only the case breaking the interval is possible at this point.
+          assert(a < r.src);
+          out.push(std::make_pair(r.dst, b-r.src+r.dst)); // transform from r.src to b
+          q.push(std::make_pair(a, r.src-1)); // store from a to r.src-1
+          mapped = true;
+          break;
+        }
+      }
+
+      // Those that aren't mapped are left unchanged.
+      if(!mapped)
+      {
+        for(auto const& r : ranges)
+          assert(b < r.src or r.src+r.len-1 < a);
+
+        //std::cout << ">>>> Push into out w/o conversion "; dbp(interval);
+        out.push(interval);
+      }
+    }
+
+    return out;
+  }
 };
 
 } // anonymous namespace
 
-::map s2s, s2f, f2w, w2l, l2t, t2h, h2l;
-std::vector<uint> seeds;
+namespace std {
+std::ostream& operator<<(std::ostream& in, ll const& p)
+{
+  in << "(" << p.first << ", " << p.second << ")";
+  return in;
+}
+}
 
-uint to_location(uint seed)
+::map s2s, s2f, f2w, w2l, l2t, t2h, h2l;
+std::vector<long long> seeds;
+
+long long to_location(long long seed)
 {
   return h2l.apply(t2h.apply(l2t.apply(w2l.apply(f2w.apply(s2f.apply(s2s.apply(seed)))))));
+}
+
+std::queue<ll> to_location(ll seed_interval)
+{
+  std::queue<ll> q;
+  q.push(seed_interval);
+
+  return h2l.apply(t2h.apply(l2t.apply(w2l.apply(
+            f2w.apply(s2f.apply(s2s.apply(q)))))));
 }
 
 void read_input();
@@ -41,36 +162,45 @@ int main()
 {
   read_input();
 
-  std::pair<uint, uint> ans{std::make_pair(UINT_MAX, UINT_MAX)};
+  ll ans{std::make_pair(LLONG_MAX, LLONG_MAX)};
 
   assert(seeds.size()%2 == 0);
   for(uint i{0}; i < seeds.size(); i += 2)
   {
-    ans.first = std::min(std::min(ans.first, to_location(seeds[i])), to_location(seeds[i+1]));
-    for(uint seed{seeds[i]}; seed <= seeds[i]+seeds[i+1]-1; seed++)
-      ans.second = std::min(ans.second, to_location(seed));
+    ans.first = std::min(ans.first, std::min(to_location(seeds[i]), to_location(seeds[i+1])));
+
+    ll const seed_interval{std::make_pair(seeds[i], seeds[i]+seeds[i+1]-1)};
+    std::queue<ll> location_intervals{to_location(seed_interval)};
+    while(!location_intervals.empty())
+    {
+      auto& l{location_intervals.front()};
+      ans.second = std::min(ans.second, std::min(l.first, l.second));
+      location_intervals.pop();
+    }
   }
 
-  std::cout << "Part one: " << ans.first  << '\n';
+  std::cout << "Part one: " << ans.first << '\n';
   std::cout << "Part two: " << ans.second << '\n';
 }
 
 void read_input()
 {
   std::string line;
-
   std::getline(std::cin, line);
-  std::stringstream ss(line);
-  std::string str;
-  ss >> str;
-  assert(str=="seeds:");
-  uint seed;
-  while(!ss.eof()) { ss >> seed; seeds.push_back(seed); }
+
+  {
+    std::stringstream ss(line);
+    std::string str;
+    ss >> str;
+    assert(str=="seeds:");
+    long long seed;
+    while(!ss.eof()) { ss >> seed; seeds.push_back(seed); }
+  }
 
   std::getline(std::cin, line);
   assert(line.empty());
 
-  auto read_map = [&line, &ss](std::string_view map_name, map& m)
+  auto read_map = [&line](std::string_view map_name, map& m)
   {
     std::getline(std::cin, line);
     assert(line==std::format("{} map:", map_name));
@@ -79,7 +209,7 @@ void read_input()
     {
       std::getline(std::cin, line);
       if(line.empty()) break;
-      ss = std::stringstream(line);
+      std::stringstream ss(line);
       ::range r;
       ss >> r.dst >> r.src >> r.len;
       m.ranges.push_back(r);
@@ -94,8 +224,3 @@ void read_input()
   read_map("temperature-to-humidity", t2h);
   read_map("humidity-to-location", h2l);
 }
-
-// g++ -std=c++20 -Wall -Wextra -pedantic -Wconversion -Wfatal-errors -Ofast aoc_23_day_5_give_a_seed_a_fertilizer.cpp
-// Part one: 174137457
-// Part two: 1493866
-//                      152.83s user 0.01s system 99% cpu 2:32.92 total
