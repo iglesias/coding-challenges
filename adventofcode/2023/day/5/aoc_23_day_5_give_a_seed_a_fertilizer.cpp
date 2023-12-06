@@ -3,8 +3,11 @@
 #include <bits/stdc++.h>
 #include <cstdint>
 #include <cxxabi.h>
+#include <istream>
+#include <iterator>
 #include <queue>
 #include <sstream>
+#include <type_traits>
 
 #define dbp(...) dblog(#__VA_ARGS__, __VA_ARGS__)
 
@@ -45,15 +48,14 @@ namespace
 struct range
 {
   long long dst, src, len;
-  friend std::ostream& operator<<(std::ostream& in, range const& r);
+  friend std::ostream& operator<<(std::ostream& os, range const& r);
 };
 
-[[maybe_unused]] std::ostream& operator<<(std::ostream& in, range const& r)
+[[maybe_unused]] std::ostream& operator<<(std::ostream& os, range const& r)
 {
-  in << r.dst << ' ' << r.src << ' ' << r.len;
-  return in;
+  os << r.dst << ' ' << r.src << ' ' << r.len;
+  return os;
 }
-
 
 struct map
 {
@@ -193,8 +195,9 @@ void read_input()
     std::string str;
     ss >> str;
     assert(str=="seeds:");
-    long long seed;
-    while(!ss.eof()) { ss >> seed; seeds.push_back(seed); }
+    std::copy(std::istream_iterator<long long>(ss),
+              std::istream_iterator<long long>(),
+              std::back_inserter(seeds));
   }
 
   std::getline(std::cin, line);
