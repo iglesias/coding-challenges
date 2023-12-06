@@ -24,5 +24,5 @@ using ll = long long;
 
 int main()
 {
-  cout << "Hello template!\n";
+  std::cout << "Hello template!\n";
 }
