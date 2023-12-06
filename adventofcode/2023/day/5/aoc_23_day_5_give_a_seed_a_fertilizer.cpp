@@ -79,7 +79,7 @@ struct map
 
       //std::cout << ">>>> Pop from q"; dbp(interval);
       assert(interval.second >= interval.first);
-      long long a{interval.first}, b{interval.second};
+      auto const [a, b] = interval;
       bool mapped{false};
 
       for(auto const& r : ranges)
