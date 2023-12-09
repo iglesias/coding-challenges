@@ -1,40 +1,4 @@
-// {{{ Boilerplate Code <--------------------------------------------------
-
 #include <bits/stdc++.h>
-#include <cstdint>
-#include <cxxabi.h>
-#include <istream>
-#include <iterator>
-#include <queue>
-#include <sstream>
-#include <type_traits>
-
-#define dbp(...) dblog(#__VA_ARGS__, __VA_ARGS__)
-
-template<typename T>
-std::ostream& operator<<(std::ostream& os, std::vector<T> const& v)
-{
-  int status;
-  char* demangled_name =
-    abi::__cxa_demangle(typeid(T).name(), NULL, NULL, &status);
-  assert(!status);
-  os << "vector<" << demangled_name << ">(";
-  std::free(demangled_name);
-  for(size_t i{0}; i < v.size(); i++)
-    os << v[i] << ((i == v.size()-1)? ")" : ", ");
-  return os;
-}
-
-template<typename... Args>
-void dblog(std::string vars, Args&&... values)
-{
-  std::cout << "[" << vars << " = ";
-  std::string delim = "";
-  (..., (std::cout << delim << values, delim = ", "));
-  std::cout << "]\n";
-}
-
-// }}}
 
 //FIXME try using std::uint_fast32_t brute-forcing the second part,
 //with the interval algorithm unsigned might be not possible
