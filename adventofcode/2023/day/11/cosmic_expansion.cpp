@@ -1,3 +1,10 @@
+//FIXME After simplifying from Floyd-Warshall to
+//aggregating pairwise distances, I think that
+//it shouldn't actually be necessary expand the
+//universe explicitly: the galaxies new positions
+//can be computed directly using the information
+//to make the expansion by inserting in the strings.
+
 #include <bits/stdc++.h>
 
 using image_t = std::vector<std::string>;
