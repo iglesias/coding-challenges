@@ -25,7 +25,7 @@ void read_input()
     C = (int)line.length();
   }
 
-  for(int r=0; r<R; r++) std::cout << m[r] << std::endl;
+  for(int r=0; r<R; r++) std::cout << m[r] << '\n';
 }
 
 long long cycle_number;
@@ -39,13 +39,7 @@ void try_wrap()
   if(visited.contains(h))
   {
     for(int i = 0; i < (1000000000-cycle_number)%visited.at(h); i++) cycle();
-    for(int r=0;r<R;r++) for(int c=0;c<C;c++)
-    {
-      if(m[r][c]=='O')
-      {
-        ans.second += (R-r);
-      }
-    }
+    for(int r=0;r<R;r++) for(int c=0;c<C;c++) if(m[r][c]=='O') ans.second += (R-r);
     std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
     std::exit(0);
   }
