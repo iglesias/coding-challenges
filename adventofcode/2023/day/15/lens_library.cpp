@@ -1,3 +1,5 @@
+// g++ -std=c++2b lens_library.cpp
+
 #include <bits/stdc++.h>
 
 int hash(int v, char c) { return ((v+int(c))*17)%256; }
@@ -11,30 +13,32 @@ int main()
   while(std::getline(std::cin, step, ','))
   {
     step.erase(std::remove(step.begin(), step.end(), '\n'), step.end());
-    int v = 0;
-    for(char c : step) v = hash(v, c);
-    ans.first += v;
+
+    {
+      int v = 0;
+      for(char c : step) v = hash(v, c);
+      ans.first += v;
+    }
 
     auto equals = step.find('=');
-    auto dash = step.find('-');
-    auto label = equals != std::string::npos ? step.substr(0, equals) : step.substr(0, dash);
+    auto dash   = step.find('-');
+    auto label  = equals != std::string::npos ? step.substr(0, equals) : step.substr(0, dash);
     auto box = 0;
     for(char c : label) box = hash(box, c);
-    int focal_length = -1;
-    if(equals != std::string::npos) focal_length = std::stoi(step.substr(equals+1));
 
     if(equals != std::string::npos){
-      for(int j = 0; j < (int)boxes[box].size(); j++)
+      int focal_length = std::stoi(step.substr(equals+1));
+      for(std::size_t j = 0; j < boxes.at(box).size(); j++)
       {
-        if(boxes[box][j].first == label)
+        if(boxes.at(box)[j].first == label)
         {
-          boxes[box][j].second = focal_length;
+          boxes.at(box)[j].second = focal_length;
           goto endloop;
         }
       }
       boxes[box].emplace_back(label, focal_length);
     } else if(dash != std::string::npos)
-      std::erase_if(boxes[box], [&label](std::pair<std::string, int> const& item){return item.first == label; });
+      std::erase_if(boxes.at(box), [&label](auto const& item){ return item.first == label; });
 endloop:
   }
 
