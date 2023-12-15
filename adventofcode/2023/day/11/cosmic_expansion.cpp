@@ -1,3 +1,10 @@
+//FIXME After simplifying from Floyd-Warshall to
+//aggregating pairwise distances, I think that
+//it shouldn't actually be necessary expand the
+//universe explicitly: the galaxies new positions
+//can be computed directly using the information
+//to make the expansion by inserting in the strings.
+
 #include <bits/stdc++.h>
 
 using image_t = std::vector<std::string>;
@@ -5,6 +12,7 @@ using image_t = std::vector<std::string>;
 image_t image;
 int R;
 int C;
+std::vector<std::pair<int, int>>  galaxies;
 
 void print(image_t const& image)
 {
@@ -21,17 +29,17 @@ std::vector<int> free_rows, free_cols;
 void read_input();
 std::pair<long long, long long> ans;
 void find_free_rows_and_cols();
-void solve_part_one();
-void solve_part_two();
+long long solve_part_one();
+long long solve_part_two();
 long long fw(std::vector<std::pair<int, int>> const&);
 
 int main()
 {
   read_input();
-  std::cout << "Input image:\n"; print(image);
+  //std::cout << "Input image:\n"; print(image);
   find_free_rows_and_cols();
-  solve_part_one();
-  solve_part_two();
+  ans.first = solve_part_one();
+  ans.second = solve_part_two();
   std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
 }
 
@@ -65,8 +73,21 @@ void find_free_rows_and_cols()
   }
 }
 
+long long aggregate_pairwise_distances()
+{
+  const int N = (int)galaxies.size();
+  long long ans = 0;
+  for(int i=0; i<N; i++)
+  {
+    for(int j=i+1; j<N; j++) // Manhattan
+    {
+      ans += std::abs(galaxies[i].first-galaxies[j].first) + std::abs(galaxies[i].second-galaxies[j].second);
+    }
+  }
+  return ans;
+}
 
-void solve_part_one()
+long long solve_part_one()
 {
   // Suppose the order of expanding rows or cols first doesn't matter
 
@@ -81,7 +102,7 @@ void solve_part_one()
     expanded_rows_counter++;
   }
 
-  print(expanded_image);
+  //print(expanded_image);
 
   // expand free cols
   int expanded_cols_counter = 0;
@@ -94,21 +115,21 @@ void solve_part_one()
     expanded_cols_counter++;
   }
 
-  std::cout << "Expanded image:\n"; print(expanded_image);
+  //std::cout << "Expanded image:\n"; print(expanded_image);
 
   // find galaxies in expanded image (universe)
-  std::vector<std::pair<int, int>> galaxies;
+  galaxies.clear();
   for(int r=0; r<expanded_R; r++) for(int c=0; c<expanded_C; c++)
     if(expanded_image[r][c]=='#') galaxies.emplace_back(r, c);
 
-  ans.first = fw(galaxies);
+  return aggregate_pairwise_distances();
 }
 
-void solve_part_two()
+long long solve_part_two()
 {
   int constexpr expansion_factor = 1000000;
   // find galaxies in image (universe)
-  std::vector<std::pair<int, int>> galaxies;
+  galaxies.clear();
   for(int r=0; r<R; r++) for(int c=0; c<C; c++)
     if(image[r][c]=='#') galaxies.emplace_back(r, c);
 
@@ -128,34 +149,5 @@ void solve_part_two()
     expanded_cols_counter++;
   }
 
-  ans.second = fw(galaxies);
-}
-
-long long fw(std::vector<std::pair<int, int>> const& galaxies)
-{
-  const int N = (int)galaxies.size();
-  std::vector<std::vector<int>> A(N, std::vector<int>(N, 0)); // adjacency matrix, symmetric
-
-  for(int i=0; i<N; i++)
-  {
-    for(int j=i+1; j<N; j++) // Manhattan
-      A[i][j] = A[j][i] = std::abs(galaxies[i].first-galaxies[j].first) + std::abs(galaxies[i].second-galaxies[j].second);
-  }
-
-  std::vector<std::vector<int>> D = A; // distances matrix, dynamic programming
-  for(int i=0; i<N; i++)
-  {
-    for(int j=i+1; j<N; j++)
-      if(A[i][j]==0) D[i][j] = D[j][i] = INT_MAX;
-  }
-
-  for(int i=0; i<N; i++) for(int j=0; j<N; j++) for(int k=0; k<N; k++)
-    if(D[i][j] > D[i][k] + D[k][j])
-      D[i][j] = D[i][k] + D[k][j];
-
-  long long ans = 0;
-  for(int i=0; i<N; i++)
-    for(int j=i+1; j<N; j++) ans += D[i][j];
-
-  return ans;
+  return aggregate_pairwise_distances();
 }
