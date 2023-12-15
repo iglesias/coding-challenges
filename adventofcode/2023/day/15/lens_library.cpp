@@ -1,37 +1,16 @@
-// {{{ Boilerplate Code <--------------------------------------------------------------------------
-
 #include <bits/stdc++.h>
-
-template<typename string> auto split(std::string str, string sep) -> std::vector<std::string>
-{
-  std::string::size_type pos{0}, n;
-  std::vector<std::string> out;
-
-  while((n = str.find(sep, pos)) != std::string::npos)
-  {
-    out.push_back(str.substr(pos, n-pos));
-    pos = n+1;
-  }
-
-  if(pos != 0) out.push_back(str.substr(pos));
-
-  return out;
-}
-
-// ------------------------------------------------------------------------------> End of Boilerplate }}}
 
 int hash(int v, char c) { return ((v+int(c))*17)%256; }
 
 int main()
 {
   std::pair<int, int> ans;
-  std::string line;
-  std::getline(std::cin, line);
-  auto const steps = split(line, ',');
+  std::string step;
   int constexpr num_boxes = 256;
   std::array<std::vector<std::pair<std::string, int>>, num_boxes> boxes;
-  for(auto const& step : steps) // range-based for loop
+  while(std::getline(std::cin, step, ','))
   {
+    step.erase(std::remove(step.begin(), step.end(), '\n'), step.end());
     int v = 0;
     for(char c : step) v = hash(v, c);
     ans.first += v;
