@@ -212,14 +212,17 @@ int part_one(grid M, beam starting_beam)
 int part_two(grid M)
 {
   int const R{int(M.size())}, C{int(M.at(0).size())};
-  int ans = 0;
+  std::vector<std::future<int>> values(2*R+2*C);
+  std::size_t i = 0;
   for(int r=0; r<R; r++){
-    ans = std::max(part_one(M, {r, 0, RIGHT}), ans);
-    ans = std::max(part_one(M, {r, C-1, LEFT}), ans);
+    values[i++] = std::async(part_one, M, beam(r, 0, RIGHT));
+    values[i++] = std::async(part_one, M, beam(r, C-1, LEFT));
   }
   for(int c=0; c<C; c++){
-    ans = std::max(part_one(M, {0, c, DOWN}), ans);
-    ans = std::max(part_one(M, {R-1, c, UP}), ans);
+    values[i++] = std::async(part_one, M, beam(0, c, DOWN));
+    values[i++] = std::async(part_one, M, beam(R-1, c, UP));
   }
+  int ans = 0;
+  for(auto& future : values) ans = std::max(ans, future.get());
   return ans;
 }
