@@ -2,7 +2,7 @@
 
 #include <bits/stdc++.h>
 
-#define   FOR(i, a, b)    for ( typeof(a) i = (a) ; i < (b) ; ++i )
+#define   FOR(i, a, b)    for ( decltype(a) i = (a) ; i < (b) ; ++i )
 #define   REP(i, n)       FOR(i, 0, n)
 #define   ALL(a)          (a).begin(), (a).end()
 
