@@ -1,7 +1,5 @@
 #include <bits/stdc++.h>
 
-using ii = std::pair<int, int>;
-
 struct digcomm
 {
   char dir;
@@ -19,13 +17,15 @@ std::ostream& operator<<(std::ostream& os, digcomm const& dc)
 }
 
 std::vector<digcomm> read_input();
-ii ans;
-void solve(std::vector<digcomm> const& input);
+int solve_part_one(std::vector<digcomm> const& input);
+void convert(std::vector<digcomm> const& input);
 
 int main()
 {
-  auto input = read_input();
-  solve(input);
+  auto input = read_input(); // it'll be modified in-place for part two.
+  std::pair<int, long long> ans;
+  ans.first = solve_part_one(input);
+  convert(input);
   std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
 }
 
@@ -46,20 +46,23 @@ std::vector<digcomm> read_input()
   return input;
 }
 
-void solve(std::vector<digcomm> const& input)
+using ii = std::pair<int, int>;
+using TopLeft = ii;
+using BotRight = ii;
+using grid = std::vector<std::vector<char>>;
+auto fillTrenchesAndGetCorners(grid& G, std::vector<digcomm> const& input) -> std::pair<TopLeft, BotRight>
 {
-  //FIXME extract from input. Maximum dimensions to
-  //initialize trench and level terrain grid.
-  int const RMAX=501, CMAX=501;
-  auto G = std::vector(RMAX, std::vector(CMAX, '.'));
-
-  std::map<char, ii> dir2delta{
+  std::map<char, ii> const dir2delta{
     {'R', {0,+1}}, {'D', {+1,0}}, {'L', {0,-1}}, {'U', {-1,0}},
   };
+
+  int const RMAX = static_cast<int>(G.size());
+  int const CMAX = static_cast<int>(G.at(0).size());
 
   ii p{RMAX/2,CMAX/2};
   ii topLeft{RMAX-1, CMAX-1};
   ii botRight{0,0};
+
   for(auto const& dc : input){
     auto delta = dir2delta.at(dc.dir);
     for(int i = 0; i < dc.len; i++){
@@ -75,8 +78,19 @@ void solve(std::vector<digcomm> const& input)
     }
   }
 
+  return {topLeft, botRight};
+}
+
+int solve_part_one(std::vector<digcomm> const& input)
+{
+  //FIXME extract from input. Maximum dimensions to
+  //initialize trench and level terrain grid.
+  int const RMAX=501, CMAX=501;
+  auto G = std::vector(RMAX, std::vector(CMAX, '.'));
+
+  auto const [topLeft, botRight] = fillTrenchesAndGetCorners(G, input);
+
   std::function<void(ii)> fill = [&](ii p){
-    std::cout << "fill(" << p.first << "," << p.second << ")" << '\n';
     assert(G[p.first][p.second] != '#');
     static std::bitset<RMAX*CMAX> visited;
     visited.set(p.first*CMAX, + p.second);
@@ -104,7 +118,33 @@ void solve(std::vector<digcomm> const& input)
   ii start{x.first+1, x.second+1};
   fill(start);
 
+  int ans{0};
   for(int r=topLeft.first; r<=botRight.first; r++)
     for(int c=topLeft.second; c<=botRight.second; c++)
-      if(G[r][c] == 'x' or G[r][c] == '#') ans.first++;
+      if(G[r][c] == 'x' or G[r][c] == '#') ans++;
+  return ans;
+}
+
+char digitCharToDirection(char c)
+{
+  switch(c){
+    case '0': return 'R';
+    case '1': return 'D';
+    case '2': return 'L';
+    case '3': return 'U';
+  }
+  assert(false);
+}
+
+// color -> instruction parameters
+void convert(std::vector<digcomm> const& input)
+{
+  for(auto const& dc : input){
+    int decval;
+    std::stringstream stringstream;
+    std::string hexval = dc.col.substr(2, dc.col.length()-4);
+    stringstream << hexval;
+    stringstream >> std::hex >> decval;
+    std::cout << digitCharToDirection(dc.col.at(dc.col.length()-2)) << ' ' << decval << std::endl;
+  }
 }
