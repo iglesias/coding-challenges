@@ -95,5 +95,3 @@ int solve(graph_t& graph)
 
   return count_reachable(graph, "cfn") * count_reachable(graph, "jkn");
 }
-
-//1544 is too low
