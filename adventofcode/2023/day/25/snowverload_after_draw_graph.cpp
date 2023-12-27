@@ -83,6 +83,8 @@ int count_reachable(const graph_t& graph, const std::string& u)
 
 int solve(graph_t& graph)
 {
+  // These nodes are obtained from the python program's visualization,
+  // they are easy to spot ':)
   graph.at("cfn").erase("jkn");
   graph.at("jkn").erase("cfn");
 
