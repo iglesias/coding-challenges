@@ -66,29 +66,15 @@ def perimeter(x, y):
 def methoda(X):
     x = np.imag(X)
     y = np.real(X)
-    '''
-    x = []
-    y = []
-    for c in X:
-        x.append(c.imag)
-        y.append(c.real)
-    '''
     a = area(x,y)
     p = perimeter(x,y)
     print('  Method 1:', 'area =', a, ' perimeter =', p, ' answer =', a+p/2+1)
 
 def methode(X):
     I = inflate(X)
-    '''
     x = [*I[:,0]]
     y = [*I[:,1]]
-    '''
-    x = []
-    y = []
-    for i in range(I.shape[0]):
-        x.append(I[i,0])
-        y.append(I[i,1])
-    # Close the polygon given by pyclipr.
+    # Close the polygon given by pyclipr. FIXME nicer inside inflate.
     x.append(x[0])
     y.append(y[0])
     a = area(x,y)
