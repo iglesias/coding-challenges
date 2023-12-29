@@ -1,8 +1,4 @@
-// {{{ Boilerplate Code <--------------------------------------------------------------------------
-
-
 #include <bits/stdc++.h>
-
 #include <boost/functional/hash.hpp>
 
 #define   FOR(i, a, b)    for ( decltype(a) i = (a) ; i < (b) ; ++i )
