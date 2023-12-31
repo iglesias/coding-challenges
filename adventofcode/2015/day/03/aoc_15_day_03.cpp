@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <set>
@@ -42,10 +43,11 @@ int main()
   std::pair<location_t, location_t> locations{{0,0}, {0,0}};
 
   visited_houses.emplace(0,0);
-  for(std::size_t i = 0; i < input.length(); i++){
-    locations.first += dirchar2Delta(input[i]);
-    visited_houses.insert(locations.first);
-  }
+  std::for_each(input.cbegin(), input.cend(),
+                [&](char c) mutable {
+                  locations.first += dirchar2Delta(c);
+                  visited_houses.insert(locations.first);
+                });
   std::cout << "Part one: " << visited_houses.size() << "\n";
 
   visited_houses.clear();
