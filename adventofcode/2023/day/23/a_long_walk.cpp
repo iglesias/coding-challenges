@@ -1,12 +1,20 @@
-#include <bits/stdc++.h>
+#include <bitset>
+#include <iostream>
+#include <stack>
+#include <utility>
+#include <vector>
 
 void read_input();
-int solve_part_one();
+int solve(bool part_two=false);
 
 int main()
 {
   read_input();
-  std::cout << "Part one: " << solve_part_one() << "\n";
+  int ans = solve();
+  std::cout << "Part one: " << ans << '\n';
+  bool part_two = true;
+  ans = solve(part_two);
+  std::cout << "Part two: " << ans << '\n';
 }
 
 std::vector<std::string> G;
@@ -16,8 +24,8 @@ void read_input()
 {
   std::string line;
   while(std::getline(std::cin, line)) G.push_back(std::move(line));
-  R = static_cast<int>(G.size());
-  C = static_cast<int>(G[0].size());
+  R = (int)G.size();
+  C = (int)G[0].size();
 }
 
 int constexpr AXIS_MAX = 141;
@@ -38,45 +46,53 @@ struct state
 
 std::vector<std::pair<int, int>> const deltas = {{0,1}, {1,0}, {-1,0}, {0,-1}};
 
-int solve_part_one()
+template<typename T1, typename T2> std::pair<T1, T2> operator+(std::pair<T1, T2> const& p1, std::pair<T1, T2> const& p2)
 {
-  std::queue<state> q;
-  state s(0,1);
-  q.push(s);
+  return std::make_pair(p1.first+p2.first, p1.second+p2.second);
+}
+
+template<typename Container> void handle_dot_cell(Container& c, state const& s)
+{
+  for(auto const& delta : deltas){
+    auto const p = s.p + delta;
+    if(0 > p.first or 0 > p.second or p.first > R-1 or p.second > C-1) continue;
+    if(G[p.first][p.second] == '#') continue;
+    if(s.visited.test(p.first*C + p.second)) continue;
+    c.emplace(p.first, p.second, s.num_steps+1, s.visited);
+  }
+}
+
+int solve(bool part_two)
+{
+  //std::queue<state> q;
+  std::stack<state> q;
+  q.push(state(0,1));
   int max_num_steps = 0;
-
   while(!q.empty()){
-    s = q.front();
+    //state s = q.front();
+    state s = q.top();
     q.pop();
-
     if(s.p.first == R-1 and s.p.second ==  C-2){
+      if(s.num_steps > max_num_steps) std::cout << "s.num.steps=" << s.num_steps << std::endl;
       max_num_steps = std::max(max_num_steps, s.num_steps);
       continue;
     }
-
-    switch(G[s.p.first][s.p.second]){
-      case '.':
-        for(auto const& delta : deltas){
-          auto p = s.p;
-          if((p.first == 0 and delta.first == -1) or (p.second == 0 and delta.second == -1)) continue;
-          p.first += delta.first; p.second += delta.second;
-          if(p.first > R-1 or p.second > C-1) continue;
-          if(G[p.first][p.second] == '#') continue;
-          if(s.visited.test(p.first*C + p.second)) continue;
-          q.emplace(p.first, p.second, s.num_steps+1, s.visited);
-        }
-        break;
-      case '>':
-        s.visited.set(s.p.first*C + s.p.second);
-        if(s.visited.test(s.p.first*C + s.p.second+1)) continue;
-        q.emplace(s.p.first, s.p.second+1, s.num_steps+1, s.visited);
-        break;
-      case 'v':
-        s.visited.set(s.p.first*C + s.p.second);
-        if(s.visited.test((s.p.first+1)*C + s.p.second)) continue;
-        q.emplace(s.p.first+1, s.p.second, s.num_steps+1, s.visited);
+    if(part_two and ((G[s.p.first][s.p.second] == '.') or (G[s.p.first][s.p.second] == '>') or (G[s.p.first][s.p.second] == 'v'))){
+      handle_dot_cell(q, s);
+    }else if(!part_two){
+      switch(G[s.p.first][s.p.second]){
+        case '.':
+          handle_dot_cell(q, s);
+          break;
+        case '>':
+          if(s.visited.test(s.p.first*C + s.p.second+1)) continue;
+          q.emplace(s.p.first, s.p.second+1, s.num_steps+1, s.visited);
+          break;
+        case 'v':
+          if(s.visited.test((s.p.first+1)*C + s.p.second)) continue;
+          q.emplace(s.p.first+1, s.p.second, s.num_steps+1, s.visited);
+      }
     }
   }
-
   return max_num_steps;
 }

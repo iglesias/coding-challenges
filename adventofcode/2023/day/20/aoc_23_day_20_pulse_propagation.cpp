@@ -1,6 +1,15 @@
 // {{{ Boilerplate Code <---------------------------------------------------------------------------
 
-#include <bits/stdc++.h>
+#include <algorithm>
+#include <iostream>
+#include <cstdint>
+#include <numeric>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <variant>
+#include <vector>
 
 #define   ALL(a)          (a).begin(), (a).end()
 
@@ -37,6 +46,7 @@ struct flip_flop
 };
 
 enum class Pulse { LOW, HIGH };
+auto to_string(Pulse pulse){ if(pulse == Pulse::LOW) return "LOW"; return "HIGH"; };
 
 //prefix &
 struct conjunction //remember pulse of inputs
@@ -57,27 +67,22 @@ std::unordered_set<std::string> output_modules;
 //FIXME scope globals.
 
 void read_input();
-std::pair<int, int> ans;
-void solve();
+int solve_part_one();
+int64_t solve_part_two(int num_button_presses);
 
-int main()
+int main(int argc, char* argv[])
 {
+  const int num_button_presses = argc > 1 ? std::stoi(argv[1]) : 10000;
   read_input();
-  solve();
-  std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
+  std::cout << "Part one: " << solve_part_one() << ".\nPart two: " << solve_part_two(num_button_presses) << ".\n";
 }
 
 void read_input()
 {
   auto get_vectors_from_first_split = [](std::string const& line){
     auto const vs0 = split(line, std::string(" -> "));
-    assert(vs0.size() == 2);
-
-    auto vs1 = vs0.at(1).find(',') == std::string::npos ?
-      std::vector{vs0.at(1)} : split(vs0.at(1), std::string(","));
+    auto vs1 = vs0.at(1).find(',') == std::string::npos ? std::vector{vs0.at(1)} : split(vs0.at(1), std::string(","));
     for(std::string& s : vs1) s.erase(std::remove(ALL(s), ' '), s.end());
-    for(auto const& item : vs1) for(char c : item) assert(!std::isspace(c));
-
     return std::make_pair(vs0, vs1);
   };
 
@@ -89,9 +94,6 @@ void read_input()
     auto [vs0, vs1] = get_vectors_from_first_split(line);
 
     if(vs0.at(0) == "broadcaster"){
-      //std::cout << "[read_input] broadcaster       to";
-      //for(auto const& item : vs1) std::cout << " " << std::setw(5) << item;
-      //std::cout << "\n";
       broadcaster = std::move(vs1);
       continue;
     }
@@ -99,23 +101,15 @@ void read_input()
     char const prefix = vs0.at(0).at(0);
     std::string modname = vs0.at(0).substr(1, vs0.at(0).length()-1);
     if(prefix == '&'){
-      //std::cout << "[read_input] conjunction " << std::setw(5) << modname << " to";
-      //for(auto const& item : vs1) std::cout << " " << std::setw(5) << item;
-      //std::cout << "\n";
       modules.insert(std::make_pair(modname, conjunction(std::move(vs1), modname)));
     }else if(prefix == '%'){
-      //std::cout << "[read_input] flip-flop   " << std::setw(5) << modname << " to";
-      //for(auto const& item : vs1) std::cout << " " << std::setw(5) << item;
-      //std::cout << "\n";
       modules.insert(std::make_pair(modname, flip_flop(std::move(vs1), modname)));
-    }else assert(false);
+    }
   }
 
   for(std::string const& line : lines){
     auto [vs0, vs1] = get_vectors_from_first_split(line);
-
     for(auto const& output : vs1){
-
       if(!modules.contains(output)){
         output_modules.insert(output);
         continue;
@@ -123,8 +117,6 @@ void read_input()
       try{
         conjunction& c = std::get<conjunction>(modules.at(output));
         c.input_pulses.emplace(vs0.at(0).substr(1, vs0.at(0).length()-1), Pulse::LOW);
-        //std::cout << "[read_input] conjunction " << std::setw(5) << c.name << " has input "
-        //          << vs0.at(0).substr(1, vs0.at(0).length()-1) << '\n';
       }catch(std::bad_variant_access const& ex){
         continue;
       }
@@ -134,29 +126,12 @@ void read_input()
 
 using queue = std::queue<std::tuple<std::string, Pulse, std::string>>;
 
-// I think this looks nice from a polymorphic interface point of view.
-//
-// In particular, it shows an advantage of using static polymorphism.
-// The modules 'data' and its process 'behaviour' is polymorphic, that is,
-// we want that process handles the pulses differently depending on the
-// type of module (conjunction, flip-flop, etc.) that is relaying the pulse.
-//
-// In contrast with C++ virtual polymorphism, these functions do not need
-// to comply to the same interface! This allows for making explicit
-// that for one of the module types, flip-flop , the 'from' parameter is
-// not needed. So it can be dropped.
-//
-// On the other hand, just to name a con or disadvantage of this static
-// polymorphism with std::variant vs virtual polymorphism, below I am
-// writing the dispatching with a case for each type. It is with nevertheless
-// done with `if constexpr`!
 void process(queue& q,      module& m, Pulse pulse, std::string const& from);
 void process(queue& q, conjunction& c, Pulse pulse, std::string const& from);
 void process(queue& q,   flip_flop& f, Pulse pulse);
 
 void process(queue& q, conjunction& c, Pulse pulse, std::string const& from)
 {
-  assert(c.input_pulses.contains(from));
   c.input_pulses.at(from) = pulse;
   bool low_found = false;
   for(auto const& kv : c.input_pulses)
@@ -186,28 +161,48 @@ void process(queue& q, module& m, Pulse pulse, std::string const& from)
       process(q, std::get<flip_flop>(m), pulse);
     else if constexpr(std::is_same_v<T, conjunction>)
       process(q, std::get<conjunction>(m), pulse, from);
-    else{
-      static_assert(always_false_v<T>, "non-exhaustive module visitor.");
-    }
   }, m);
 }
 
-void solve()
+int64_t solve(int num_button_presses, bool part_one)
 {
-  //aptly button module: it sends a low pulse to the broadcaster module
+  //aptly button module: it sends a low pulse to the broadcaster module.
   queue q;
-  int constexpr num_button_presses = 1000;
   int num_low_pulses = num_button_presses, num_high_pulses = 0;
+  int ans = 0;
+  std::vector<int64_t> high_pulses_pl, high_pulses_mz, high_pulses_lz, high_pulses_zm;
   for(int n = 0; n < num_button_presses; n++){
     for(std::string const& m : broadcaster) q.emplace(m, Pulse::LOW, "broadcaster");
-
     while(!q.empty()){
       auto const& [m, pulse, from] = q.front();
+      std::string const input_to_rx = "bn";
+      if(m == input_to_rx){
+        if(pulse == Pulse::HIGH){
+          if(from == "pl") high_pulses_pl.push_back(n);
+          if(from == "mz") high_pulses_mz.push_back(n);
+          if(from == "lz") high_pulses_lz.push_back(n);
+          if(from == "zm") high_pulses_zm.push_back(n);
+        }
+      }
       if(pulse == Pulse::LOW) num_low_pulses++; else num_high_pulses++;
       //std::cout << from << (pulse == Pulse::LOW ? " -low" : " -high") << "-> " << m << "\n";
       if(!output_modules.contains(m)) process(q, modules.at(m), pulse, from);
       q.pop();
     }
+    if(n == num_button_presses-1) ans = num_low_pulses*num_high_pulses;
   }
-  ans.first = num_low_pulses*num_high_pulses;
+  if(part_one) return ans;
+  std::adjacent_difference(ALL(high_pulses_pl), high_pulses_pl.begin());
+  std::adjacent_difference(ALL(high_pulses_mz), high_pulses_mz.begin());
+  std::adjacent_difference(ALL(high_pulses_lz), high_pulses_lz.begin());
+  std::adjacent_difference(ALL(high_pulses_zm), high_pulses_zm.begin());
+  return high_pulses_pl[1]*high_pulses_mz[1]*high_pulses_lz[1]*high_pulses_zm[1];
+}
+
+int solve_part_one(){
+  return solve(1000, true);
+}
+
+int64_t solve_part_two(int num_button_presses){
+  return solve(num_button_presses, false);
 }
