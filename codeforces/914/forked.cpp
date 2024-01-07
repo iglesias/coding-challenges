@@ -1,39 +1,46 @@
-#include <bits/stdc++.h>
+// g++ -std=c++2b
 
-#define   ALL(a)          (a).begin(), (a).end()
+#include <algorithm>
+#include <array>
+#include <iostream>
+#include <ranges> // C++23 for views::cartesian_product
+#include <set>
+#include <utility>
+#include <vector>
 
-using ii = std::pair<int, int>;
+using cell = std::pair<int, int>;
 
-std::set<ii> get_attacking_cells(int a, int b, int x, int y)
+std::set<cell> get_attacking_cells(int a, int b, int x, int y)
 {
-  std::set<ii> attacking_cells;
-  attacking_cells.emplace(std::make_pair(x+a, y+b));
-  attacking_cells.emplace(std::make_pair(x+a, y-b));
-  attacking_cells.emplace(std::make_pair(x-a, y+b));
-  attacking_cells.emplace(std::make_pair(x-a, y-b));
-  attacking_cells.emplace(std::make_pair(x+b, y+a));
-  attacking_cells.emplace(std::make_pair(x+b, y-a));
-  attacking_cells.emplace(std::make_pair(x-b, y+a));
-  attacking_cells.emplace(std::make_pair(x-b, y-a));
+  using std::views::cartesian_product;
+  using std::array;
+  std::set<cell> attacking_cells;
+  for(auto [c, d] : cartesian_product(array{a,-a}, array{b,-b})) attacking_cells.emplace(x+c, y+d);
+  for(auto [c, d] : cartesian_product(array{b,-b}, array{a,-a})) attacking_cells.emplace(x+c, y+d);
   return attacking_cells;
+}
+
+auto get_case_in()
+{
+  int a, b, x_k, y_k, x_q, y_q;
+  std::cin >> a >> b >> x_k >> y_k >> x_q >> y_q;
+  return std::make_tuple(a, b, x_k, y_k, x_q, y_q);
 }
 
 int main()
 {
-  std::cin.tie(0)->sync_with_stdio(0);
   int T;
   std::cin >> T;
-  for(int t{0}; t<T; t++)
-  {
-    int a, b; std::cin >> a >> b;
-    int x_k, y_k; std::cin >> x_k >> y_k;
-    int x_q, y_q; std::cin >> x_q >> y_q;
-
+  for(int t{0}; t<T; t++){
+    auto const [a, b, x_k, y_k, x_q, y_q] = get_case_in();
     auto const cells_k{get_attacking_cells(a, b, x_k, y_k)};
     auto const cells_q{get_attacking_cells(a, b, x_q, y_q)};
 
-    std::vector<ii> intersection;
-    std::set_intersection(ALL(cells_k), ALL(cells_q), std::back_inserter(intersection));
-    std::cout << intersection.size() << '\n';
+    std::vector<cell> intersection;
+    std::set_intersection(std::cbegin(cells_k), std::cend(cells_k),
+                          std::cbegin(cells_q), std::cend(cells_q),
+                          std::back_inserter(intersection));
+
+    std::cout << intersection.size() << "\n";
   }
 }
