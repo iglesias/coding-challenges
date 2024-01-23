@@ -1,16 +1,14 @@
-#include <iostream>
+#include <cstdint>
 
-using namespace std;
+#include <gtest/gtest.h>
 
-typedef unsigned long long ull;
-
-ull sum_digits(ull n)
+uint8_t sum_digits(uint64_t n)
 {
 	// base case -  1-digit numbers
 	if (n / 10 == 0) return n;
 
 	// recursion
-	int digits_sum = 0;
+	uint8_t digits_sum = 0;
 	while (n > 0)
 	{
 		digits_sum += n%10;
@@ -20,14 +18,21 @@ ull sum_digits(ull n)
 	return sum_digits(digits_sum);
 }
 
-int main(int, char**)
+TEST(sum_digits, SampleInput)
 {
-	int n;
+	EXPECT_EQ(sum_digits(2),          2);
+	EXPECT_EQ(sum_digits(11),         2);
+	EXPECT_EQ(sum_digits(47),         2);
+	EXPECT_EQ(sum_digits(1234567892), 2);
+}
 
-	for (;;)
-	{
-		cin >> n;
-		if (n == 0) break;
-		else cout << sum_digits(n) << endl;
-	}
+TEST(sum_digits, LargestInput)
+{
+	EXPECT_EQ(sum_digits(UINT64_MAX), 6);
+}
+
+int main(int argc, char** argv)
+{
+	testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
 }
