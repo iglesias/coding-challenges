@@ -1,5 +1,6 @@
 #include <algorithm> // C++23's std::ranges::fold_left
 #include <iostream>
+#include <ranges>    // C++20's std::ranges::views::reverse
 #include <string>
 #include <utility>
 #include <vector>
@@ -70,6 +71,20 @@ auto get_coords(std::string s) -> point
 
 } // anonymous
 
+bool is_supported(point const& p, brick const& b){
+  if(b.first.x != b.second.x){
+    if(b.first.y != p.y or b.first.z != p.z-1)   return false;
+    FOR(x, b.first.x, b.second.x+1) if(p.x == x) return true;
+  }else if(b.first.y != b.second.y){
+    if(b.first.x != p.x or b.first.z != p.z-1)   return false;
+    FOR(y, b.first.y, b.second.y+1) if(p.y == y) return true;
+  }else{
+    if(b.first.x != p.x or b.first.y != p.y)       return false;
+    FOR(z, b.first.z, b.second.z+1) if(z == p.z-1) return true;
+  }
+  return false;
+}
+
 bool is_supported(brick b, vector<brick> const& bricks){
   // Transform brick to its points.
   vector<point> to_check;
@@ -86,18 +101,7 @@ bool is_supported(brick b, vector<brick> const& bricks){
   // Check if any of the points is supported.
   for(point const& p : to_check){
     if(p.z == 1) return true;
-    for(brick const& bi : bricks) {
-      if(bi.first.x != bi.second.x){
-        if(bi.first.y != p.y or bi.first.z != p.z-1) continue;
-        FOR(x, bi.first.x, bi.second.x+1) if(p.x == x) return true;
-      }else if(bi.first.y != bi.second.y){
-        if(bi.first.x != p.x or bi.first.z != p.z-1) continue;
-        FOR(y, bi.first.y, bi.second.y+1) if(p.y == y) return true;
-      }else{
-        if(bi.first.x != p.x or bi.first.y != p.y) continue;
-        FOR(z, bi.first.z, bi.second.z+1) if(z == p.z-1) return true;
-      }
-    }
+    for(brick const& bi : bricks | std::ranges::views::reverse) if(is_supported(p, bi)) return true;
   }
   return false;
 }
