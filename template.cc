@@ -1,4 +1,4 @@
-// {{{ Boilerplate Code <--------------------------------------------------
+// {{{ Boilerplate <--------------------------------------------------
 
 #include <bits/stdc++.h>
 
@@ -20,11 +20,9 @@ void dblog(std::string vars, Args&&... values)
 using ii = std::pair<int, int>;
 using ll = long long;
 
-// }}}
+// }}}            <--------------------------------------------------
 
 int main()
 {
-  cout << "Hello template!" << endl;
-
-  return 0;
+  std::cout << "Hello template!\n";
 }
