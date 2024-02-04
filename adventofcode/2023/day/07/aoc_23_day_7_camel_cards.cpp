@@ -2,13 +2,11 @@
 
 #define   ALL(a)          (a).begin(), (a).end()
 
-#define dbp(...) dblog(#__VA_ARGS__, __VA_ARGS__)
-
 struct hand_t
 {
   std::string cards;
   int bid;
-  std::map<char, uint> hist;
+  std::map<char, uint> counter;
   std::string type;
   uint type_strength;
 
@@ -37,24 +35,24 @@ struct hand_t
   }
 };
 
-std::vector<hand_t> hands;
 
-void read_input();
+std::vector<hand_t> read_input();
 void process(hand_t& h);
 
 int main()
 {
-  read_input();
-  long long ans{0};
+  auto hands = read_input();
   for(auto& h : hands) process(h);
-  std::sort(ALL(hands));
+  std::sort(hands.begin(), hands.end());
   int rank{1};
+  long long ans{0};
   for(auto const& h : hands) ans += rank++*h.bid;
   std::cout << ans << '\n';
 }
 
-void read_input()
+std::vector<hand_t> read_input()
 {
+  std::vector<hand_t> hands;
   std::string line;
   while(std::getline(std::cin, line))
   {
@@ -63,27 +61,21 @@ void read_input()
     ss >> h.cards >> h.bid;
     hands.push_back(h);
   }
+  return hands;
 }
 
 void process(hand_t& h)
 {
-  auto& hist = h.hist;
   uint max{0};
   for(char c : h.cards)
   {
-    if(hist.contains(c))
-    {
-      hist.at(c) += 1;
-    }
-    else
-    {
-      hist.insert(std::make_pair(c, 1));
-    }
-    max = std::max(max, hist.at(c));
+    if(h.counter.contains(c)) h.counter.at(c) += 1;
+    else                      h.counter.insert(std::make_pair(c, 1));
+    max = std::max(max, h.counter.at(c));
   }
 
   uint num_pairs{0};
-  for(auto const& kv : hist) num_pairs += (kv.second == 2);
+  for(auto const& kv : h.counter) num_pairs += (kv.second == 2);
 
   std::string& type = h.type;
   switch(max)
@@ -93,7 +85,7 @@ void process(hand_t& h)
       h.type_strength = 7;
       break;
     case 4:
-      if(hist.contains('J'))
+      if(h.counter.contains('J'))
       {
         type = "Five of a kind";
         h.type_strength = 7;
@@ -103,9 +95,9 @@ void process(hand_t& h)
       h.type_strength = 6;
       break;
     case 3:
-      if(hist.contains('J'))
+      if(h.counter.contains('J'))
       {
-        if(hist.at('J')==3)
+        if(h.counter.at('J')==3)
         {
           if(num_pairs)
           {
@@ -120,7 +112,7 @@ void process(hand_t& h)
             break;
           }
         }
-        else if(hist.at('J')==2)
+        else if(h.counter.at('J')==2)
         {
           type = "Five of a kind";
           h.type_strength = 7;
@@ -145,9 +137,9 @@ void process(hand_t& h)
       }
       break;
     case 2:
-      if(hist.contains('J'))
+      if(h.counter.contains('J'))
       {
-        if(hist.at('J') == 1)
+        if(h.counter.at('J') == 1)
         {
           if(num_pairs == 2)
           {
@@ -179,7 +171,7 @@ void process(hand_t& h)
       else             { type = "One pair"; h.type_strength = 2; }
       break;
     case 1:
-      if(hist.contains('J'))
+      if(h.counter.contains('J'))
       {
         type = "One pair";
         h.type_strength = 2;
