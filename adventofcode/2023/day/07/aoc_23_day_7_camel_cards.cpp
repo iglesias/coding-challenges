@@ -1,7 +1,5 @@
 #include <bits/stdc++.h>
 
-#define   ALL(a)          (a).begin(), (a).end()
-
 struct hand_t
 {
   std::string cards;
@@ -75,7 +73,7 @@ void process(hand_t& h)
   }
 
   uint num_pairs{0};
-  for(auto const& kv : h.counter) num_pairs += (kv.second == 2);
+  for(uint n : std::views::values(h.counter)) num_pairs += (n == 2);
 
   std::string& type = h.type;
   switch(max)
