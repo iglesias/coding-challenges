@@ -64,16 +64,13 @@ std::vector<hand_t> read_input()
 
 void process(hand_t& h)
 {
-  uint max{0};
   for(char c : h.cards)
-  {
     if(h.counter.contains(c)) h.counter.at(c) += 1;
-    else                      h.counter.insert(std::make_pair(c, 1));
-    max = std::max(max, h.counter.at(c));
-  }
+    else                      h.counter.emplace(c, 1);
 
-  uint num_pairs{0};
-  for(uint n : std::views::values(h.counter)) num_pairs += (n == 2);
+  uint const max = *std::ranges::max_element(std::views::values(h.counter));
+  auto const is_pair = [](uint i){ return i == 2; };
+  uint const num_pairs = std::ranges::count_if(std::views::values(h.counter), is_pair);
 
   std::string& type = h.type;
   switch(max)
