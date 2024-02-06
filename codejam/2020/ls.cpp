@@ -1,11 +1,64 @@
 #include <bits/stdc++.h>
 
+#define rep(i, n) for (int (i) = 0; (i) < (n); (i)++)
+
+namespace ls {
+
 using namespace std;
 
 constexpr int NMAX = 50;
 using matrix = array<array<int, NMAX>, NMAX>;
 
+// FIXME globals.
 int N, K;
+
+}
+
+namespace std {
+  template<> struct hash<ls::matrix>
+  {
+    std::size_t operator()(ls::matrix const& m) const noexcept
+    {
+      std::size_t h = 0;
+      rep(i, ls::N) rep(j, ls::N)
+      {
+        h ^= i ^ j ^ m[i][j];
+      }
+
+      return h;
+    } 
+  };
+}
+
+namespace ls {
+
+matrix permute_cols(const matrix& m, int j);
+matrix permute_rows(const matrix& m, int i);
+int trace(const matrix& m);
+
+// FIXME globals.
+vector<vector<int>> perms;
+int tried_count = 0;
+
+bool search(matrix& ans, const matrix& golden)
+{
+  vector<int> iota_v(N);
+  iota(iota_v.begin(), iota_v.end(), 1);
+
+  perms.clear();
+  perms.push_back(iota_v);
+  while(next_permutation(iota_v.begin(), iota_v.end())) perms.push_back(iota_v);
+
+  rep(i, static_cast<int>(perms.size())) rep(j, static_cast<int>(perms.size()))
+  {
+    ans = permute_rows(golden, i);
+    ans = permute_cols(ans, j);
+    if (trace(ans) == K) return true;
+    tried_count++;
+  }
+
+  return false;
+}
 
 void print(const matrix& m)
 {
@@ -54,22 +107,12 @@ int trace(const matrix& m)
   return ans;
 }
 
-vector<vector<int>> perms;
 matrix permute_rows(const matrix& m, int i)
 {
   matrix ans = m;
   for (int ii=0; ii<N; ii++)
     for (int j=0; j<N; j++)
       ans[ii][j] = m[perms[i][ii]-1][j];
-  /*
-  cout << "permute_rows i=" << i << endl;
-  cout << "perms[i]=";
-  for (int v : perms[i]) cout << v;
-  cout << endl;
-  cout << "permuted" << endl;
-  print(ans);
-  cout << endl;
-  */
   return ans;
 }
 
@@ -82,49 +125,9 @@ matrix permute_cols(const matrix& m, int j)
   return ans;
 }
 
-int tried_count = 0;
-
-bool search(matrix& ans, const matrix& golden)
-{
-  vector<int> iota_v(N);
-  iota(iota_v.begin(), iota_v.end(), 1);
-
-  perms.clear();
-  perms.push_back(iota_v);
-  while (next_permutation(iota_v.begin(), iota_v.end()))
-    perms.push_back(iota_v);
-
-  /*
-  cout << "perms\n";
-  for (const auto& perm : perms)
-  {
-    for (int v : perm)
-      cout << v;
-    cout << ' ';
-  }
-  cout << endl;
-  */
-
-  for (int i=0; i<(int)perms.size(); i++)
-  {
-    for (int j=0; j<(int)perms.size(); j++)
-    {
-      ans = permute_rows(golden, i);
-      ans = permute_cols(ans, j);
-      if (trace(ans) == K)
-        return true;
-      tried_count++;
-    }
-  }
-
-  return false;
-}
-
-#define rep(i) for (int i=0; i<N; i++)
-
 bool operator==(const matrix& lhs, const matrix& rhs)
 {
-  rep(i) rep(j)
+  rep(i, N) rep(j, N)
   {
     if (lhs[i][j] < 1 || lhs[i][j] > N) assert(false);
     if (rhs[i][j] < 1 || rhs[i][j] > N) assert(false);
@@ -132,23 +135,6 @@ bool operator==(const matrix& lhs, const matrix& rhs)
   }
 
   return true;
-}
-
-namespace std
-{
-  template<> struct hash<matrix>
-  {
-    std::size_t operator()(matrix const& m) const noexcept
-    {
-      std::size_t h = 0;
-      rep(i) rep(j)
-      {
-        h ^= i ^ j ^ m[i][j];
-      }
-
-      return h;
-    } 
-  };
 }
 
 unordered_set<matrix> reduced_ls;
@@ -162,58 +148,49 @@ void fill(matrix& m, int i, int j)
   }
 
   set<int> possible;
-  for (int i=1; i<=N; i++)
-    possible.insert(i);
-  for (int ii=0; ii<i; ii++)
-    possible.erase(m[ii][j]);
-  for (int jj=0; jj<j; jj++)
-    possible.erase(m[i][jj]);
+  for (int i=1; i<=N; i++)    possible.insert(i);
+  for (int ii=0; ii<i; ii++)  possible.erase(m[ii][j]);
+  for (int jj=0; jj<j; jj++)  possible.erase(m[i][jj]);
 
   for (int v : possible)
   {
     m[i][j] = v;
-    if (i == N-1)
-      fill(m, 1, j+1);
-    else
-      fill(m, i+1, j);
+    if (i == N-1) fill(m, 1, j+1);
+    else          fill(m, i+1, j);
   }
 }
+
+} // namespace ls
 
 int main()
 {
     int T;
-    cin >> T;
+    std::cin >> T;
     for (int t=0; t<T; t++)
     {
-        cin >> N >> K;
+      std::cin >> ls::N >> ls::K;
 
-        matrix m = vector<vector<int>>(N, vector<int>(N, 0));
-        rep(i)
-        {
-          m[i][0] = i+1;
-        }
+        //matrix m = vector<vector<int>>(N, vector<int>(N, 0));
+        ls::matrix m;
+        rep(i, ls::N) m[i][0] = i+1;
 
-        rep(j)
-        {
-          m[0][j] = j+1;
-        }
+        rep(j, ls::N) m[0][j] = j+1;
         
-        reduced_ls.clear();
-        fill(m, 1, 1);
-//        cout << "#reduced_ls=" << reduced_ls.size() << endl;
+        ls::reduced_ls.clear();
+        ls::fill(m, 1, 1);
         
-        tried_count = 0;
+        ls::tried_count = 0;
         bool found = false;
-        tried.clear();
-        traces.clear();
+        ls::tried.clear();
+        ls::traces.clear();
         // Make all columns and rows permutations and check trace
-        for (const matrix& golden : reduced_ls)
+        for (const ls::matrix& golden : ls::reduced_ls)
         {
-          matrix ans;
-          if (search(ans, golden))
+          ls::matrix ans;
+          if (ls::search(ans, golden))
           {
-            cout << "Case #" << t+1 << ": POSSIBLE\n";
-            print(ans);
+            std::cout << "Case #" << t+1 << ": POSSIBLE\n";
+            ls::print(ans);
             found = true;
             break;
           }
@@ -224,77 +201,7 @@ int main()
 //          cout << "tried_count=" << tried_count << endl;
 //          cout << "#tried=" << tried.size() << endl;
 //          cout << "#traces=" << traces.size() << endl;
-          cout << "Case #" << t+1 << ": IMPOSSIBLE\n";
+          std::cout << "Case #" << t+1 << ": IMPOSSIBLE\n";
         }
     }
 }
-
-/*
-2
-3 6
-2 3
-44
-5 5
-5 1
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5 5
-5
-1 1
-1 2
-1 10
-1 -1
-1 0
-6
-2 0
-2 -1
-2 5
-2 3
-2 2
-2 4
-5
-1 -1
-2 -1
-3 -1
-4 -1
-5 -1
-*/
