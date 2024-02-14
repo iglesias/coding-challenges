@@ -72,11 +72,25 @@ def main():
     print(A)
     q = deque()
     for i in range(N):
-        q.append((i, {i}, set(range(N))-{i}, 0))
+        q.append((i, {i}, set(range(N))-{i},
+                  np.uint16(0), [fromidx[i]]))
+    mincost = np.uint16(60000)
+    maxcost = np.uint16(0)
     while len(q) > 0:
-        loc, visited, pending, cost = q.pop()
-        print(loc, visited, pending, cost)
-        #TODO
+        org, visited, pending, cost, path = q.pop()
+        print(org, visited, pending, cost)
+        print(path)
+        if len(pending) == 0:
+            print(path, cost)
+            mincost = min(mincost, cost)
+            maxcost = max(maxcost, cost)
+        for dst in pending:
+            if A[org][dst] > 0:
+                q.append((dst, visited|{dst}, pending-{dst},
+                          cost+A[org][dst], path+[fromidx[dst]]))
+    return mincost, maxcost
 
 if __name__ == '__main__':
-    main()
+    shortest, longest = main()
+    print('Part one:', shortest)
+    print('Part two:', longest)
