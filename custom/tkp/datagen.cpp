@@ -22,15 +22,19 @@ auto main(int argc, char* argv[]) -> int {
   std::vector<int> w((2*N+1)*(2*N+1));
   std::set<int> idxs;
   std::ranges::iota(w, 0);
-  int const D = 15, P = 3;
+  int const D = 15, P = 3, Q = 20; // FIXME randomize.
   std::ranges::sample(w, std::inserter(idxs, idxs.end()), D+P,
                       std::mt19937 {std::random_device{}()});
   // FIXME consider adding shuffle so that pickups aren't forced to appear
   // on the right since the sampled indices are ordered and the pickups
   // are defined in the input after the deliveries.
-  fmt::println("{} {}", D, P);
+  fmt::println("{} {} {}", D, P, Q);
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> capacity_distribution(1, 3); // FIXME magic numbers
   for (int i{0}; auto const& item : std::views::cartesian_product(v, v)) {
-    if (idxs.contains(i++)) fmt::println("{}", item);
+    int const q = capacity_distribution(gen);
+    if (idxs.contains(i++)) fmt::println("{} {}", item, q);
   }
 
   return 0;
