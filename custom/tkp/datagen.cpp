@@ -22,14 +22,14 @@ auto main(int argc, char* argv[]) -> int {
   std::vector<int> w((2*N+1)*(2*N+1));
   std::set<int> idxs;
   std::ranges::iota(w, 0);
-  int const D = 7, P = 4, Q = 15; // FIXME randomize.
+  int const D = 7, P = 4, Q = 9; // TODO randomize.
   std::ranges::sample(w, std::inserter(idxs, idxs.end()), D+P,
                       std::mt19937 {std::random_device{}()});
-  // FIXME consider adding shuffle so that pickups are everywhere.
+  // TODO consider adding shuffle so that pickups are everywhere.
   fmt::println("{} {} {}", D, P, Q);
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_int_distribution<> capacity_distribution(1, 3); // FIXME magic numbers
+  std::uniform_int_distribution<> capacity_distribution(1, 3); // TODO magic numbers
   for (int i{0}; auto const& item : std::views::cartesian_product(v, v)) {
     int const q = capacity_distribution(gen);
     if (idxs.contains(i++)) fmt::println("{} {}", item, q);
