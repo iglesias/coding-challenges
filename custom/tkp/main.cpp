@@ -9,7 +9,8 @@ struct Event {
 std::pair<std::vector<std::pair<int, int>>, int> output_route(
     const std::vector<Event>& deliveries, const Event& pickup, int capacity);
 
-int solve(const std::vector<Event>& deliveries, const std::vector<Event>& pickups, int capacity) {
+std::pair<int, std::vector<std::pair<int, int>>> solve(const std::vector<Event>& deliveries,
+    const std::vector<Event>& pickups, int capacity) {
   const int D = (int)(deliveries.size());
 
   // Initialize dynamic programming table.
@@ -29,29 +30,29 @@ int solve(const std::vector<Event>& deliveries, const std::vector<Event>& pickup
     }
   }
 
+  std::vector<Event> picked_deliveries;
+  int i = D, c = capacity;
+  while (i > 0 && c > 0) {
+      if (dp[i][c] != dp[i - 1][c]) {
+          picked_deliveries.push_back(deliveries[i - 1]);
+          c -= deliveries[i - 1].capacity;
+      }
+      --i;
+  }
+
   // Calculate route.
   std::vector<std::pair<int, int>> best_route;
   int best_cost = 100000;
   const int P = (int)(pickups.size());
   for (int p = 0; p < P; p++) {
-    auto [route, cost] = output_route(deliveries, pickups[p], capacity);
+    auto [route, cost] = output_route(picked_deliveries, pickups[p], capacity);
     if(cost < best_cost) {
       best_route = route;
       best_cost = cost;
     }
   }
 
-  // Print route.
-  if (!best_route.empty()) {
-    best_route.insert(best_route.begin(), {0, 0});
-    std::cout << "Route: ";
-    for (auto loc : best_route) {
-        std::cout << "(" << loc.first << ", " << loc.second << ") ";
-    }
-    std::cout << std::endl;
-  }
-
-  return dp[D][capacity];
+  return {dp[D][capacity], best_route};
 }
 
 auto main() -> int {
@@ -66,9 +67,12 @@ auto main() -> int {
     std::cin >> lparen >> deliveries[i].x >> sep >> deliveries[i].y >> rparen >> deliveries[i].capacity;
   }
 
-  std::cout << "Deliveries:\n";
+  std::cout << "Vehicle's capacity: " << capacity << '\n';
+  std::cout << "Deliveries (x, y, capacity):\n";
   for (auto delivery : deliveries)
-    std::cout << "  " << delivery.x << ' ' << delivery.y << '\n';
+    std::cout << "  " << std::setw(3) << delivery.x << ' '
+                      << std::setw(3) << delivery.y << ' '
+                      << std::setw(3) << delivery.capacity << '\n';
 
   for (int i = 0; i < P; ++i) {
     char lparen, rparen, sep[2];
@@ -77,10 +81,19 @@ auto main() -> int {
 
   std::cout << "Pickups:\n";
   for (auto pickup : pickups)
-    std::cout << "  " << pickup.x << ' ' << pickup.y << '\n';
+    std::cout << "  " << std::setw(3) << pickup.x << ' '
+                      << std::setw(3) << pickup.y << ' '
+                      << std::setw(3) << pickup.capacity << '\n';
 
-  int max_deliveries = solve(deliveries, pickups, capacity);
-  std::cout << "Maximum deliveries served: " << max_deliveries << std::endl;
+  auto [max_deliveries, route] = solve(deliveries, pickups, capacity);
+
+  std::cout << "Maximum number of deliveries: " << max_deliveries << std::endl;
+  route.insert(route.begin(), {0, 0});
+  std::cout << "Route: ";
+  for (auto loc : route) {
+      std::cout << "(" << loc.first << ", " << loc.second << ") ";
+  }
+  std::cout << std::endl;
 
   return 0;
 }
