@@ -22,12 +22,10 @@ auto main(int argc, char* argv[]) -> int {
   std::vector<int> w((2*N+1)*(2*N+1));
   std::set<int> idxs;
   std::ranges::iota(w, 0);
-  int const D = 15, P = 3, Q = 20; // FIXME randomize.
+  int const D = 7, P = 4, Q = 15; // FIXME randomize.
   std::ranges::sample(w, std::inserter(idxs, idxs.end()), D+P,
                       std::mt19937 {std::random_device{}()});
-  // FIXME consider adding shuffle so that pickups aren't forced to appear
-  // on the right since the sampled indices are ordered and the pickups
-  // are defined in the input after the deliveries.
+  // FIXME consider adding shuffle so that pickups are everywhere.
   fmt::println("{} {} {}", D, P, Q);
   std::random_device rd;
   std::mt19937 gen(rd());
