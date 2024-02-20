@@ -4,6 +4,7 @@
 #include <random>
 #include <ranges>
 #include <set>
+#include <stdexcept>
 #include <vector>
 
 #include <fmt/core.h> 
@@ -12,8 +13,11 @@
 auto main(int argc, char* argv[]) -> int {
   int N = 3;
   if (argc > 1) {
-    //TODO handle exception on bad input.
-    N = std::stoi(argv[1]);
+    try {
+      N = std::abs(std::stoi(argv[1]));
+    } catch (std::invalid_argument const&) {
+      N = 3;
+    }
   }
 
   std::vector<int> v(2*N+1);
@@ -23,6 +27,11 @@ auto main(int argc, char* argv[]) -> int {
   std::set<int> idxs;
   std::ranges::iota(w, 0);
   int const D = 7, P = 4, Q = 9; // TODO randomize.
+
+  if (D+P > (int)w.size()) {
+    throw std::invalid_argument("Not enough space (f N) for the specified D and P.");
+  }
+
   std::ranges::sample(w, std::inserter(idxs, idxs.end()), D+P,
                       std::mt19937 {std::random_device{}()});
   // TODO consider adding shuffle so that pickups are everywhere.
