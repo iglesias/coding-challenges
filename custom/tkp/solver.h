@@ -5,7 +5,6 @@ struct Event {
   int capacity;
 };
 
-// Forward declaration.
 std::pair<std::vector<std::pair<int, int>>, int> output_route(
     const std::vector<Event>& deliveries, const Event& pickup, int capacity);
 
