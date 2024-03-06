@@ -1,8 +1,6 @@
 #include <bits/stdc++.h>
 
-// 90293 is too low
-
-std::array<char[151], 200> map; int N;
+std::array<char[151], 200> grid; int N;
 std::string path;
 std::string fname;
 
@@ -11,8 +9,6 @@ void read_input(const std::string &fname);
 namespace
 {
   struct p { int r, c; p() : r(0), c(0) {} p(int ar, int ac) : r(ar), c(ac) {} };
-
-//  void print(const p &ap) { std::cout << "(" << ap.r << ", " << ap.c << ")\n"; }
 
   struct instruction
   {
@@ -25,13 +21,13 @@ namespace
   };
 }
 
-::p find_begin_in_map()
+::p find_begin_in_grid()
 {
-  int c = std::find(map[0], map[0] + sizeof(map[0]) / sizeof(map[0][0]), '.') - map[0];
+  int c = std::find(grid[0], grid[0] + sizeof(grid[0]) / sizeof(grid[0][0]), '.') - grid[0];
   return ::p(0, c);
 }
 
-void print_map();
+void print_grid();
 bool get_next_instruction_from_path(::instruction &instruction);
 void move(::p &pos, int n, bool part_two=false);
 void rotate(::p &pos, char c);
@@ -53,7 +49,7 @@ int main(int argc, char* argv[])
 
   std::cout << "Part One: " << part_one() << '\n';
   std::cout << "Part Two: " << part_two() << '\n';
-  print_map();
+  print_grid();
 }
 
 void read_input(const std::string &fname)
@@ -71,16 +67,15 @@ void read_input(const std::string &fname)
   const int num_lines{count_num_lines()};
   fstream.close();
 
-  // the map has (num_lines-2) rows
   fstream.open(fname);
   std::string line;
   for(int i{0}; i<num_lines-2; i++)
   {
     assert(std::getline(fstream, line));
-    //std::strcpy(map[i], line.c_str());
-    for(size_t j{0}; j<line.length(); j++) map[i][j] = line[j];
-    for(size_t j{line.length()}; j<150; j++) map[i][j] = ' ';
-    map[i][150] = '\0';
+    //std::strcpy(grid[i], line.c_str());
+    for(size_t j{0}; j<line.length(); j++) grid[i][j] = line[j];
+    for(size_t j{line.length()}; j<150; j++) grid[i][j] = ' ';
+    grid[i][150] = '\0';
   }
 
   assert(std::getline(fstream, line));
@@ -93,10 +88,10 @@ void read_input(const std::string &fname)
   N = num_lines-2;
 }
 
-void print_map()
+void print_grid()
 {
   for(int i{0}; i<N; i++)
-    std::cout << map[i] << '\n';
+    std::cout << grid[i] << '\n';
 }
 
 // reading instructions from path.
@@ -165,20 +160,10 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc);
 
 void move(::p &pos, int n, bool part_two)
 {
-  //std::cout << ">> move(pos, " << n << ")\n";
-
-
-  char dirc{map[pos.r][pos.c]};
+  char dirc{grid[pos.r][pos.c]};
   ::p dir{dirc2dir(dirc)};
 
-  /*
-  std::cout << ">>>> pos=";
-  ::print(pos);
-  std::cout << ">>>> dir=";
-  ::print(dir);
-  */
-
-  auto in_map = [](const ::p &p) -> bool
+  auto in_grid = [](const ::p &p) -> bool
   {
     return p.r>=0 and p.r<N and p.c>=0 and p.c<150;
   };
@@ -187,12 +172,11 @@ void move(::p &pos, int n, bool part_two)
   for(int i{0}; i<n; i++)
   {
     ::p trypos(pos.r+dir.r, pos.c+dir.c);
-//    std::cout << ">>>> map[...][...]=" << map[trypos.r][trypos.c] << std::endl;
 
-    if(in_map(trypos) && map[trypos.r][trypos.c]=='#') break;
+    if(in_grid(trypos) && grid[trypos.r][trypos.c]=='#') break;
 
     // check if warps
-    if(!in_map(trypos) or map[trypos.r][trypos.c]==' ')
+    if(!in_grid(trypos) or grid[trypos.r][trypos.c]==' ')
     {
       if(part_two)
       {
@@ -211,32 +195,30 @@ void move(::p &pos, int n, bool part_two)
       assert(trypos.r==pos.r and trypos.c==pos.c);
     }
 
-    map[pos.r][pos.c] = dirc;
-    //print_map();
+    grid[pos.r][pos.c] = dirc;
   }
 }
 
 void rotate(::p &pos, char c)
 {
-  //std::cout << ">> rotate(pos, " << c << ")\n";
-  const char dirc{map[pos.r][pos.c]};
+  const char dirc{grid[pos.r][pos.c]};
   switch(dirc)
   {
     case '>':
-      if(c=='R') map[pos.r][pos.c] = 'v';
-      else { assert(c=='L'); map[pos.r][pos.c] = '^'; }
+      if(c=='R') grid[pos.r][pos.c] = 'v';
+      else { assert(c=='L'); grid[pos.r][pos.c] = '^'; }
       break;
     case '<':
-      if(c=='R') map[pos.r][pos.c] = '^';
-      else { assert(c=='L'); map[pos.r][pos.c] = 'v'; }
+      if(c=='R') grid[pos.r][pos.c] = '^';
+      else { assert(c=='L'); grid[pos.r][pos.c] = 'v'; }
       break;
     case 'v':
-      if(c=='R') map[pos.r][pos.c] = '<';
-      else { assert(c=='L'); map[pos.r][pos.c] = '>'; }
+      if(c=='R') grid[pos.r][pos.c] = '<';
+      else { assert(c=='L'); grid[pos.r][pos.c] = '>'; }
       break;
     case '^':
-      if(c=='R') map[pos.r][pos.c] = '>';
-      else { assert(c=='L'); map[pos.r][pos.c] = '<'; }
+      if(c=='R') grid[pos.r][pos.c] = '>';
+      else { assert(c=='L'); grid[pos.r][pos.c] = '<'; }
       break;
     default:
       assert(false);
@@ -246,7 +228,7 @@ void rotate(::p &pos, char c)
 int decode(const ::p &pos)
 {
   int ans = 1000*(pos.r+1) + 4*(pos.c+1);
-  switch(map[pos.r][pos.c])
+  switch(grid[pos.r][pos.c])
   {
     case '>':
       ans += 0;
@@ -271,9 +253,8 @@ int solve(const bool part_two=false)
 {
   read_input(fname);
 
-  ::p begin = find_begin_in_map();
-  map[begin.r][begin.c] = '>';
-  //print_map();
+  ::p begin = find_begin_in_grid();
+  grid[begin.r][begin.c] = '>';
 
   ::instruction instruction;
   ::p pos{begin};
@@ -314,9 +295,9 @@ bool part_one_warp(::p &pos, const ::p &dir)
     assert(dir.c==0);
     assert(pos.c>=0 and pos.c<150);
     int r{0};
-    while(map[r][pos.c] == ' ') r++;
+    while(grid[r][pos.c] == ' ') r++;
     assert(r<N);
-    if(map[r][pos.c] == '#') return true;
+    if(grid[r][pos.c] == '#') return true;
     pos.r = r;
   }
   else if(dir.r==-1)
@@ -325,9 +306,9 @@ bool part_one_warp(::p &pos, const ::p &dir)
     assert(pos.c>=0 and pos.c<150);
     // part one
     int r{pos.r};
-    while(r<N && map[r][pos.c] != ' ') r++;
+    while(r<N && grid[r][pos.c] != ' ') r++;
     if(r==0) return true;
-    if(map[r-1][pos.c] == '#') return true;
+    if(grid[r-1][pos.c] == '#') return true;
     pos.r = r-1;
     //
   }
@@ -337,9 +318,9 @@ bool part_one_warp(::p &pos, const ::p &dir)
     assert(pos.r>=0 and pos.r<N);
     // part one
     int c{0};
-    while(map[pos.r][c] == ' ') c++;
+    while(grid[pos.r][c] == ' ') c++;
     assert(c<150);
-    if(map[pos.r][c] == '#') return true;
+    if(grid[pos.r][c] == '#') return true;
     pos.c = c;
   }
   else if(dir.c==-1)
@@ -348,9 +329,9 @@ bool part_one_warp(::p &pos, const ::p &dir)
     assert(pos.r>=0 and pos.r<N);
     // part one
     int c{pos.c};
-    while(c<150 && map[pos.r][c] != ' ') c++;
+    while(c<150 && grid[pos.r][c] != ' ') c++;
     if(c==0) return true;
-    if(map[pos.r][c-1] == '#') return true;
+    if(grid[pos.r][c-1] == '#') return true;
     pos.c = c-1;
     //
   }
@@ -364,7 +345,13 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
   if(dir.r==+1)
   {
     assert(dir.c==0);
-    assert(pos.c>=0 and pos.c<150);
+    //assert((pos.c>=0 and pos.c<150) && "Assert message");
+    if(not(pos.c>=0 and pos.c<150))
+    {
+      std::stringstream ss;
+      ss << pos.c << " is out of bounds\n";
+      throw std::runtime_error(ss.str());
+    }
 
     if(fname!="aoc_day22_map.2.in")
     {
@@ -373,7 +360,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       int c = 4*0 + (4*3-1-pos.c);
       dirc = '^';
       //TODO rest of the parts and guard this part
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c; 
       dir = dirc2dir(dirc);
@@ -388,7 +375,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 1 v -> 3 <, first col -> last row
       int r = 4*K-1-pos.c;
       int c = 2*K-1;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c;
       assert(K<=pos.r && pos.r<2*K && K<=pos.c && pos.c<2*K);
@@ -403,7 +390,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 4 v -> 6 <, first col -> first row
       int c = K-1;
       int r = pos.c+2*K;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c; 
       assert(3*K<=pos.r && pos.c<K);
@@ -418,7 +405,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 6 v -> 1 v, first col -> first col
       int r = 0;
       int c = 2*K+pos.c;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c; 
       assert(pos.r<K && 2*K<=pos.c);
@@ -440,9 +427,9 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       //TODO part two warping going up with sample input
       // placeholder equal to part one
       int r{pos.r};
-      while(r<N && map[r][pos.c] != ' ') r++;
+      while(r<N && grid[r][pos.c] != ' ') r++;
       if(r==0) return true;
-      if(map[r-1][pos.c] == '#') return true;
+      if(grid[r-1][pos.c] == '#') return true;
       pos.r = r-1;
       return false;
     }
@@ -455,7 +442,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 1 ^ -> 6 ^, first col -> first col
       int r  = 4*K-1;
       int c = pos.c-2*K;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c; 
       assert(3*K<=pos.r && pos.c<K);
@@ -469,7 +456,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 2 ^ -> 6 >, first col -> first row
       int r = pos.c+2*K;
       int c = 0;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c; 
       assert(3*K<=pos.r && pos.r<4*K && pos.c<K);
@@ -484,7 +471,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 5 ^ -> 3 >, first col -> first row
       int r = K+pos.c;
       int c = K;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c; 
       assert(K<=pos.r && pos.r<2*K && K<=pos.c && pos.c<2*K);
@@ -508,7 +495,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       int r = 4*2 + 0;
       int c = 4*3 + (4*2-1-pos.r);
       //TODO rest of the parts and guard this part
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.c = c;
       pos.r = r;
       dirc = 'v';
@@ -524,7 +511,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 1 > -> 4 >, first row -> last row
       int r = 3*K-1-pos.r;
       int c = 2*K-1;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c;
       assert(2*K<=pos.r && pos.r<3*K && K<=pos.c && pos.c<2*K);
@@ -537,7 +524,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 3 > -> 1 ^, first row -> first col
       int r = K-1;
       int c = K+pos.r;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c;
       assert(pos.r<K && 2*K<=pos.c);
@@ -552,7 +539,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 4 > -> 1 <, first row -> last row
       int r = 3*K-1-pos.r;
       int c = 3*K-1;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c;
       assert(pos.r<K && 2*K<=pos.c && pos.c<3*K);
@@ -567,7 +554,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 6 > -> 4 ^, first row -> first col
       int r = 3*K-1;
       int c = pos.r-2*K;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c;
       assert(2*K<=pos.r && pos.r<3*K && K<=pos.c && pos.c<2*K);
@@ -590,9 +577,9 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       //TODO part two warping going up with sample input
       // placeholder equal to part one
       int c{pos.c};
-      while(c<150 && map[pos.r][c] != ' ') c++;
+      while(c<150 && grid[pos.r][c] != ' ') c++;
       if(c==0) return true;
-      if(map[pos.r][c-1] == '#') return true;
+      if(grid[pos.r][c-1] == '#') return true;
       pos.c = c-1;
       return false;
     }
@@ -605,7 +592,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 2 < -> 5 >, first row -> last row
       int r = 3*K-1-pos.r;
       int c = 0;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c;
       assert(pos.c<K && 2*K<=pos.r && pos.r<3*K);
@@ -620,7 +607,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 3 < -> 5 v, first row -> first col
       int r = 2*K;
       int c = pos.r-K;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c;
       assert(pos.c<K && 2*K<=pos.r && pos.r<3*K);
@@ -635,7 +622,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 5 < -> 2 >, first row -> last row
       int r = 3*K-1-pos.r;
       int c = K;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c;
       assert(pos.r<K && K<=pos.c && pos.c<2*K);
@@ -650,7 +637,7 @@ bool part_two_warp(::p &pos, ::p &dir, char &dirc)
       // 6 < -> 2 v, first row -> first col
       int r = 0;
       int c = pos.r-2*K;
-      if(map[r][c] == '#') return true;
+      if(grid[r][c] == '#') return true;
       pos.r = r;
       pos.c = c;
       assert(pos.r<K && K<=pos.c && pos.c<2*K);
