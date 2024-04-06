@@ -1,82 +1,17 @@
 #ifndef NOBUILD_H_
 #define NOBUILD_H_
 
-#ifndef _WIN32
-#    define _POSIX_C_SOURCE 200809L
-#    include <sys/types.h>
-#    include <sys/wait.h>
-#    include <sys/stat.h>
-#    include <unistd.h>
-#    include <dirent.h>
-#    include <fcntl.h>
-#    include <limits.h>
-#    define PATH_SEP "/"
+#define _POSIX_C_SOURCE 200809L
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <limits.h>
+#define PATH_SEP "/"
 typedef pid_t Pid;
 typedef int Fd;
-#else
-#    define WIN32_MEAN_AND_LEAN
-#    include "windows.h"
-#    include <process.h>
-#    define PATH_SEP "\\"
-typedef HANDLE Pid;
-typedef HANDLE Fd;
-// minirent.h HEADER BEGIN ////////////////////////////////////////
-// Copyright 2021 Alexey Kutepov <reximkut@gmail.com>
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-// ============================================================
-//
-// minirent — 0.0.1 — A subset of dirent interface for Windows.
-//
-// https://github.com/tsoding/minirent
-//
-// ============================================================
-//
-// ChangeLog (https://semver.org/ is implied)
-//
-//    0.0.1 First Official Release
-
-#ifndef MINIRENT_H_
-#define MINIRENT_H_
-
-#define WIN32_LEAN_AND_MEAN
-#include "windows.h"
-
-struct dirent {
-    char d_name[MAX_PATH+1];
-};
-
-typedef struct DIR DIR;
-
-DIR *opendir(const char *dirpath);
-struct dirent *readdir(DIR *dirp);
-int closedir(DIR *dirp);
-
-#endif  // MINIRENT_H_
-// minirent.h HEADER END ////////////////////////////////////////
-
-// TODO(#28): use GetLastErrorAsString everywhere on Windows error reporting
-LPSTR GetLastErrorAsString(void);
-
-#endif  // _WIN32
 
 #include <assert.h>
 #include <stdio.h>
@@ -204,17 +139,7 @@ void chain_echo(Chain chain);
     } while(0)
 
 #ifndef REBUILD_URSELF
-#  if _WIN32
-#    if defined(__GNUC__)
-#       define REBUILD_URSELF(binary_path, source_path) CMD("gcc", "-o", binary_path, source_path)
-#    elif defined(__clang__)
-#       define REBUILD_URSELF(binary_path, source_path) CMD("clang", "-o", binary_path, source_path)
-#    elif defined(_MSC_VER)
-#       define REBUILD_URSELF(binary_path, source_path) CMD("cl.exe", source_path)
-#    endif
-#  else
-#    define REBUILD_URSELF(binary_path, source_path) CMD("cc", "-o", binary_path, source_path)
-#  endif
+#  define REBUILD_URSELF(binary_path, source_path) CMD("cc", "-o", binary_path, source_path)
 #endif
 
 // Go Rebuild Urself™ Technology
@@ -334,107 +259,6 @@ char *shift_args(int *argc, char ***argv);
 
 #ifdef NOBUILD_IMPLEMENTATION
 
-#ifdef _WIN32
-LPSTR GetLastErrorAsString(void)
-{
-    // https://stackoverflow.com/questions/1387064/how-to-get-the-error-message-from-the-error-code-returned-by-getlasterror
-
-    DWORD errorMessageId = GetLastError();
-    assert(errorMessageId != 0);
-
-    LPSTR messageBuffer = NULL;
-
-    DWORD size =
-        FormatMessage(
-            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, // DWORD   dwFlags,
-            NULL, // LPCVOID lpSource,
-            errorMessageId, // DWORD   dwMessageId,
-            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // DWORD   dwLanguageId,
-            (LPSTR) &messageBuffer, // LPTSTR  lpBuffer,
-            0, // DWORD   nSize,
-            NULL // va_list *Arguments
-        );
-
-    return messageBuffer;
-}
-
-// minirent.h IMPLEMENTATION BEGIN ////////////////////////////////////////
-struct DIR {
-    HANDLE hFind;
-    WIN32_FIND_DATA data;
-    struct dirent *dirent;
-};
-
-DIR *opendir(const char *dirpath)
-{
-    assert(dirpath);
-
-    char buffer[MAX_PATH];
-    snprintf(buffer, MAX_PATH, "%s\\*", dirpath);
-
-    DIR *dir = (DIR*)calloc(1, sizeof(DIR));
-
-    dir->hFind = FindFirstFile(buffer, &dir->data);
-    if (dir->hFind == INVALID_HANDLE_VALUE) {
-        errno = ENOSYS;
-        goto fail;
-    }
-
-    return dir;
-
-fail:
-    if (dir) {
-        free(dir);
-    }
-
-    return NULL;
-}
-
-struct dirent *readdir(DIR *dirp)
-{
-    assert(dirp);
-
-    if (dirp->dirent == NULL) {
-        dirp->dirent = (struct dirent*)calloc(1, sizeof(struct dirent));
-    } else {
-        if(!FindNextFile(dirp->hFind, &dirp->data)) {
-            if (GetLastError() != ERROR_NO_MORE_FILES) {
-                errno = ENOSYS;
-            }
-
-            return NULL;
-        }
-    }
-
-    memset(dirp->dirent->d_name, 0, sizeof(dirp->dirent->d_name));
-
-    strncpy(
-        dirp->dirent->d_name,
-        dirp->data.cFileName,
-        sizeof(dirp->dirent->d_name) - 1);
-
-    return dirp->dirent;
-}
-
-int closedir(DIR *dirp)
-{
-    assert(dirp);
-
-    if(!FindClose(dirp->hFind)) {
-        errno = ENOSYS;
-        return -1;
-    }
-
-    if (dirp->dirent) {
-        free(dirp->dirent);
-    }
-    free(dirp);
-
-    return 0;
-}
-// minirent.h IMPLEMENTATION END ////////////////////////////////////////
-#endif // _WIN32
-
 Cstr_Array cstr_array_append(Cstr_Array cstrs, Cstr cstr)
 {
     Cstr_Array result = {
@@ -548,17 +372,6 @@ Pipe pipe_make(void)
 {
     Pipe pip = {0};
 
-#ifdef _WIN32
-    // https://docs.microsoft.com/en-us/windows/win32/ProcThread/creating-a-child-process-with-redirected-input-and-output
-
-    SECURITY_ATTRIBUTES saAttr = {0};
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    saAttr.bInheritHandle = TRUE;
-
-    if (!CreatePipe(&pip.read, &pip.write, &saAttr, 0)) {
-        PANIC("Could not create pipe: %s", GetLastErrorAsString());
-    }
-#else
     Fd pipefd[2];
     if (pipe(pipefd) < 0) {
         PANIC("Could not create pipe: %s", strerror(errno));
@@ -566,45 +379,21 @@ Pipe pipe_make(void)
 
     pip.read = pipefd[0];
     pip.write = pipefd[1];
-#endif // _WIN32
 
     return pip;
 }
 
 Fd fd_open_for_read(Cstr path)
 {
-#ifndef _WIN32
     Fd result = open(path, O_RDONLY);
     if (result < 0) {
         PANIC("Could not open file %s: %s", path, strerror(errno));
     }
     return result;
-#else
-    // https://docs.microsoft.com/en-us/windows/win32/fileio/opening-a-file-for-reading-or-writing
-    SECURITY_ATTRIBUTES saAttr = {0};
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    saAttr.bInheritHandle = TRUE;
-
-    Fd result = CreateFile(
-                    path,
-                    GENERIC_READ,
-                    0,
-                    &saAttr,
-                    OPEN_EXISTING,
-                    FILE_ATTRIBUTE_READONLY,
-                    NULL);
-
-    if (result == INVALID_HANDLE_VALUE) {
-        PANIC("Could not open file %s", path);
-    }
-
-    return result;
-#endif // _WIN32
 }
 
 Fd fd_open_for_write(Cstr path)
 {
-#ifndef _WIN32
     Fd result = open(path,
                      O_WRONLY | O_CREAT | O_TRUNC,
                      S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
@@ -612,61 +401,15 @@ Fd fd_open_for_write(Cstr path)
         PANIC("could not open file %s: %s", path, strerror(errno));
     }
     return result;
-#else
-    SECURITY_ATTRIBUTES saAttr = {0};
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    saAttr.bInheritHandle = TRUE;
-
-    Fd result = CreateFile(
-                    path,                  // name of the write
-                    GENERIC_WRITE,         // open for writing
-                    0,                     // do not share
-                    &saAttr,               // default security
-                    CREATE_NEW,            // create new file only
-                    FILE_ATTRIBUTE_NORMAL, // normal file
-                    NULL                   // no attr. template
-                );
-
-    if (result == INVALID_HANDLE_VALUE) {
-        PANIC("Could not open file %s: %s", path, GetLastErrorAsString());
-    }
-
-    return result;
-#endif // _WIN32
 }
 
 void fd_close(Fd fd)
 {
-#ifdef _WIN32
-    CloseHandle(fd);
-#else
     close(fd);
-#endif // _WIN32
 }
 
 void pid_wait(Pid pid)
 {
-#ifdef _WIN32
-    DWORD result = WaitForSingleObject(
-                       pid,     // HANDLE hHandle,
-                       INFINITE // DWORD  dwMilliseconds
-                   );
-
-    if (result == WAIT_FAILED) {
-        PANIC("could not wait on child process: %s", GetLastErrorAsString());
-    }
-
-    DWORD exit_status;
-    if (GetExitCodeProcess(pid, &exit_status) == 0) {
-        PANIC("could not get process exit code: %lu", GetLastError());
-    }
-
-    if (exit_status != 0) {
-        PANIC("command exited with exit code %lu", exit_status);
-    }
-
-    CloseHandle(pid);
-#else
     for (;;) {
         int wstatus = 0;
         if (waitpid(pid, &wstatus, 0) < 0) {
@@ -686,8 +429,6 @@ void pid_wait(Pid pid)
             PANIC("command process was terminated by %s", strsignal(WTERMSIG(wstatus)));
         }
     }
-
-#endif // _WIN32
 }
 
 Cstr cmd_show(Cmd cmd)
@@ -701,48 +442,6 @@ Cstr cmd_show(Cmd cmd)
 
 Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
 {
-#ifdef _WIN32
-    // https://docs.microsoft.com/en-us/windows/win32/procthread/creating-a-child-process-with-redirected-input-and-output
-
-    STARTUPINFO siStartInfo;
-    ZeroMemory(&siStartInfo, sizeof(siStartInfo));
-    siStartInfo.cb = sizeof(STARTUPINFO);
-    // NOTE: theoretically setting NULL to std handles should not be a problem
-    // https://docs.microsoft.com/en-us/windows/console/getstdhandle?redirectedfrom=MSDN#attachdetach-behavior
-    siStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-    // TODO(#32): check for errors in GetStdHandle
-    siStartInfo.hStdOutput = fdout ? *fdout : GetStdHandle(STD_OUTPUT_HANDLE);
-    siStartInfo.hStdInput = fdin ? *fdin : GetStdHandle(STD_INPUT_HANDLE);
-    siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
-
-    PROCESS_INFORMATION piProcInfo;
-    ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
-
-    BOOL bSuccess =
-        CreateProcess(
-            NULL,
-            // TODO(#33): cmd_run_async on Windows does not render command line properly
-            // It may require wrapping some arguments with double-quotes if they contains spaces, etc.
-            cstr_array_join(" ", cmd.line),
-            NULL,
-            NULL,
-            TRUE,
-            0,
-            NULL,
-            NULL,
-            &siStartInfo,
-            &piProcInfo
-        );
-
-    if (!bSuccess) {
-        PANIC("Could not create child process %s: %s\n",
-              cmd_show(cmd), GetLastErrorAsString());
-    }
-
-    CloseHandle(piProcInfo.hThread);
-
-    return piProcInfo.hProcess;
-#else
     pid_t cpid = fork();
     if (cpid < 0) {
         PANIC("Could not fork child process: %s: %s",
@@ -771,7 +470,6 @@ Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
     }
 
     return cpid;
-#endif // _WIN32
 }
 
 void cmd_run_sync(Cmd cmd)
@@ -939,49 +637,24 @@ void chain_echo(Chain chain)
 
 Cstr path_get_current_dir()
 {
-#ifdef _WIN32
-    DWORD nBufferLength = GetCurrentDirectory(0, NULL);
-    if (nBufferLength == 0) {
-        PANIC("could not get current directory: %s", GetLastErrorAsString());
-    }
-
-    char *buffer = (char*) malloc(nBufferLength);
-    if (GetCurrentDirectory(nBufferLength, buffer) == 0) {
-        PANIC("could not get current directory: %s", GetLastErrorAsString());
-    }
-
-    return buffer;
-#else
     char *buffer = (char*) malloc(PATH_MAX);
     if (getcwd(buffer, PATH_MAX) == NULL) {
         PANIC("could not get current directory: %s", strerror(errno));
     }
 
     return buffer;
-#endif // _WIN32
 }
 
 void path_set_current_dir(Cstr path)
 {
-#ifdef _WIN32
-    if (!SetCurrentDirectory(path)) {
-        PANIC("could not set current directory to %s: %s",
-              path, GetLastErrorAsString());
-    }
-#else
     if (chdir(path) < 0) {
         PANIC("could not set current directory to %s: %s",
               path, strerror(errno));
     }
-#endif // _WIN32
 }
 
 int path_exists(Cstr path)
 {
-#ifdef _WIN32
-    DWORD dwAttrib = GetFileAttributes(path);
-    return (dwAttrib != INVALID_FILE_ATTRIBUTES);
-#else
     struct stat statbuf = {0};
     if (stat(path, &statbuf) < 0) {
         if (errno == ENOENT) {
@@ -994,17 +667,10 @@ int path_exists(Cstr path)
     }
 
     return 1;
-#endif
 }
 
 int path_is_dir(Cstr path)
 {
-#ifdef _WIN32
-    DWORD dwAttrib = GetFileAttributes(path);
-
-    return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
-            (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
-#else
     struct stat statbuf = {0};
     if (stat(path, &statbuf) < 0) {
         if (errno == ENOENT) {
@@ -1017,22 +683,14 @@ int path_is_dir(Cstr path)
     }
 
     return S_ISDIR(statbuf.st_mode);
-#endif // _WIN32
 }
 
 void path_rename(const char *old_path, const char *new_path)
 {
-#ifdef _WIN32
-    if (!MoveFileEx(old_path, new_path, MOVEFILE_REPLACE_EXISTING)) {
-        PANIC("could not rename %s to %s: %s", old_path, new_path,
-              GetLastErrorAsString());
-    }
-#else
     if (rename(old_path, new_path) < 0) {
         PANIC("could not rename %s to %s: %s", old_path, new_path,
               strerror(errno));
     }
-#endif // _WIN32
 }
 
 void path_mkdirs(Cstr_Array path)
@@ -1108,23 +766,6 @@ void path_rm(Cstr path)
 
 int is_path1_modified_after_path2(const char *path1, const char *path2)
 {
-#ifdef _WIN32
-    FILETIME path1_time, path2_time;
-
-    Fd path1_fd = fd_open_for_read(path1);
-    if (!GetFileTime(path1_fd, NULL, NULL, &path1_time)) {
-        PANIC("could not get time of %s: %s", path1, GetLastErrorAsString());
-    }
-    fd_close(path1_fd);
-
-    Fd path2_fd = fd_open_for_read(path2);
-    if (!GetFileTime(path2_fd, NULL, NULL, &path2_time)) {
-        PANIC("could not get time of %s: %s", path2, GetLastErrorAsString());
-    }
-    fd_close(path2_fd);
-
-    return CompareFileTime(&path1_time, &path2_time) == 1;
-#else
     struct stat statbuf = {0};
 
     if (stat(path1, &statbuf) < 0) {
@@ -1138,7 +779,6 @@ int is_path1_modified_after_path2(const char *path1, const char *path2)
     int path2_time = statbuf.st_mtime;
 
     return path1_time > path2_time;
-#endif
 }
 
 void VLOG(FILE *stream, Cstr tag, Cstr fmt, va_list args)
