@@ -5,13 +5,13 @@
 uint8_t sum_digits(uint64_t n)
 {
 	// base case -  1-digit numbers
-	if (n / 10 == 0) return n;
+	if (n / 10 == 0) return static_cast<uint8_t>(n);
 
 	// recursion
 	uint8_t digits_sum = 0;
 	while (n > 0)
 	{
-		digits_sum += n%10;
+		digits_sum += static_cast<uint8_t>(n%10);
 		n /= 10;
 	}
 
