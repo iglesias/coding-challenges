@@ -1,47 +1,37 @@
-#include <bits/stdc++.h>
+#include <bitset>
+#include <cassert>
+#include <iomanip>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 
-struct digcomm
-{
+struct digcomm {
   char dir;
   int  len;
   std::string col;
 };
 
-std::ostream& operator<<(std::ostream& os, digcomm const& dc)
-{
-  os << "digcomm(";
-  os << dc.dir << ' ' << std::setw(2) << dc.len << ' ';
-  os << dc.col;
-  os << ")";
-  return os;
-}
-
 std::vector<digcomm> read_input();
 int solve_part_one(std::vector<digcomm> const& input);
 void convert(std::vector<digcomm> const& input);
 
-int main()
-{
-  auto input = read_input(); // it'll be modified in-place for part two.
-  std::pair<int, long long> ans;
-  ans.first = solve_part_one(input);
+int main() {
+  auto const input = read_input();
+  std::cout << "Part one: " << solve_part_one(input) << '\n';
   convert(input);
-  std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
 }
 
-std::vector<digcomm> read_input()
-{
+std::vector<digcomm> read_input() {
   std::vector<digcomm> input;
   std::string line;
-  while(std::getline(std::cin, line))
-  {
-    // FIXME Simplify input reading.
+  while(std::getline(std::cin, line)) {
     std::stringstream ss(line);
-    digcomm dc;
-    std::string len;
-    ss >> dc.dir >> len >> dc.col;
-    dc.len = std::stoi(len);
-    input.push_back(dc);
+    char dir;
+    std::string len, col;
+    ss >> dir >> len >> col;
+    input.emplace_back(dir, std::stoi(len), std::move(col));
   }
   return input;
 }
@@ -50,6 +40,16 @@ using ii = std::pair<int, int>;
 using TopLeft = ii;
 using BotRight = ii;
 using grid = std::vector<std::vector<char>>;
+
+ii operator+(ii const& p0, ii const& p1) {
+  return {p0.first + p1.first, p0.second + p1.second};
+}
+
+ii operator+=(ii& p0, ii const& p1) {
+  p0 = p0 + p1;
+  return p0;
+}
+
 auto fillTrenchesAndGetCorners(grid& G, std::vector<digcomm> const& input) -> std::pair<TopLeft, BotRight>
 {
   std::map<char, ii> const dir2delta{
@@ -66,9 +66,7 @@ auto fillTrenchesAndGetCorners(grid& G, std::vector<digcomm> const& input) -> st
   for(auto const& dc : input){
     auto delta = dir2delta.at(dc.dir);
     for(int i = 0; i < dc.len; i++){
-      //FIXME terse with an operator+.
-      p.first  += delta.first;
-      p.second += delta.second;
+      p += delta;
       G.at(p.first).at(p.second) = '#';
 
       topLeft.first = std::min(topLeft.first, p.first);
@@ -81,32 +79,30 @@ auto fillTrenchesAndGetCorners(grid& G, std::vector<digcomm> const& input) -> st
   return {topLeft, botRight};
 }
 
-int solve_part_one(std::vector<digcomm> const& input)
-{
-  //FIXME extract from input. Maximum dimensions to
-  //initialize trench and level terrain grid.
-  int const RMAX=501, CMAX=501;
-  auto G = std::vector(RMAX, std::vector(CMAX, '.'));
+//FIXME extract from input. Maximum dimensions to
+//initialize trench and level terrain grid.
+int const RMAX=501, CMAX=501;
 
+void fill(std::pair<int, int> const& p, grid& G) {
+  assert(G[p.first][p.second] != '#');
+  static std::bitset<RMAX * CMAX> visited;
+  visited.set(p.first * CMAX, + p.second);
+  assert(G[p.first][p.second] == '.');
+  G[p.first][p.second] = 'x';
+  static const std::vector<ii> deltas{{0, +1}, {+1, 0}, {0, -1}, {-1, 0}};
+  for(auto const& delta : deltas) {
+    std::pair<int, int> const q{p + delta};
+    assert(0 <= q.first and q.first < RMAX and 0 <= q.second and q.second < CMAX);
+    if(!visited.test(q.first*CMAX + q.second) and G[q.first][q.second] == '.')
+      fill(q, G);
+  }
+}
+
+int solve_part_one(std::vector<digcomm> const& input) {
+
+  auto G = std::vector(RMAX, std::vector(CMAX, '.'));
   auto const [topLeft, botRight] = fillTrenchesAndGetCorners(G, input);
 
-  std::function<void(ii)> fill = [&](ii p){
-    assert(G[p.first][p.second] != '#');
-    static std::bitset<RMAX*CMAX> visited;
-    visited.set(p.first*CMAX, + p.second);
-    assert(G[p.first][p.second] == '.');
-    G[p.first][p.second] = 'x';
-    std::vector<ii> deltas{{0,+1}, {+1,0}, {0,-1}, {-1,0}};
-    for(auto const& delta : deltas){
-      ii q{p.first+delta.first, p.second+delta.second};
-      assert(0 <= q.first and q.first < RMAX and 0 <= q.second and q.second < CMAX);
-      if(!visited.test(q.first*CMAX + q.second) and G[q.first][q.second] == '.')
-        fill(q);
-    }
-  };
-
-  //flood fill to compute number of cells inside.
-  //bug: topLeft is not necessarily a trench, look for the actual leftmost trench
   ii x; int min_column = CMAX-1;
   for(int r = 0; r<RMAX; r++) for(int c = 0; c<CMAX; c++)
     if(G[r][c] == '#')
@@ -116,7 +112,7 @@ int solve_part_one(std::vector<digcomm> const& input)
       }
 
   ii start{x.first+1, x.second+1};
-  fill(start);
+  fill(start, G);
 
   int ans{0};
   for(int r=topLeft.first; r<=botRight.first; r++)
@@ -147,4 +143,12 @@ void convert(std::vector<digcomm> const& input)
     stringstream >> std::hex >> decval;
     std::cout << digitCharToDirection(dc.col.at(dc.col.length()-2)) << ' ' << decval << std::endl;
   }
+}
+
+std::ostream& operator<<(std::ostream& os, digcomm const& dc) {
+  os << "digcomm(";
+  os << dc.dir << ' ' << std::setw(2) << dc.len << ' ';
+  os << dc.col;
+  os << ")";
+  return os;
 }
