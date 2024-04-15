@@ -10,8 +10,10 @@ auto getin() -> void {
   constexpr auto words{"London to Dublin = 464"sv};
 
   for (const auto word : std::views::split(words, " to "sv))
+#if GCC_VERSION > 120000
       // with string_view's C++23 range constructor:
       std::cout << std::quoted(std::string_view(word)) << ' ';
+#endif
   std::cout << '\n';
 
   auto r = std::views::split(words, " to "sv);
