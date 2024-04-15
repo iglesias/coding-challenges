@@ -11,6 +11,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build with nob
-      - run: |
+        run: |
           g++ -std=c++20 -fpermissive -o nob nob.cpp
           ./nob
