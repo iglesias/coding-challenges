@@ -1,7 +1,4 @@
-// Compiled flagging -std=c++23 with g++ (GCC) 13.2.1 20230801
-
 #include <algorithm>
-#include <format>
 #include <iostream>
 #include <set>
 #include <sstream>
@@ -44,7 +41,7 @@ int main()
 
   ans.second = std::ranges::fold_left(num_cards, 0, std::plus<int>());
 
-  std::cout << std::format("Part one: {}.\n", ans.first);
-  std::cout << std::format("Part two: {}.\n", ans.second);
+  std::cout << "Part one: " << ans.first
+            << ".\nPart two: " << ans.second << ".\n";
 }
 

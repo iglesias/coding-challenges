@@ -1,4 +1,4 @@
-//g++ -g -std=c++23 -Wall -Wextra -pedantic -Wconversion -fsanitize=undefined,address
+// TODO
 
 #include <iomanip>
 #include <iostream>
