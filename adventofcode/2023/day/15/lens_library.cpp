@@ -1,5 +1,3 @@
-// g++ -std=c++2b lens_library.cpp
-
 #include <bits/stdc++.h>
 
 int hash(int v, char c) { return ((v+int(c))*17)%256; }
@@ -28,18 +26,20 @@ int main()
 
     if(equals != std::string::npos){
       int focal_length = std::stoi(step.substr(equals+1));
-      for(std::size_t j = 0; j < boxes.at(box).size(); j++)
+      bool break_for{false};
+      for(std::size_t j = 0; j < boxes.at(box).size() and !break_for; j++)
       {
         if(boxes.at(box)[j].first == label)
         {
           boxes.at(box)[j].second = focal_length;
-          goto endloop;
+          break_for = true;
         }
       }
-      boxes[box].emplace_back(label, focal_length);
-    } else if(dash != std::string::npos)
+      if (!break_for)
+        boxes[box].emplace_back(label, focal_length);
+    }
+    else if(dash != std::string::npos)
       std::erase_if(boxes.at(box), [&label](auto const& item){ return item.first == label; });
-endloop:
   }
 
   for(int j = 0; j < num_boxes; j++)
