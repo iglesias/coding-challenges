@@ -14,10 +14,11 @@ auto getinput() -> std::vector<std::pair<char, int>> {
     std::getline(std::cin, input);
     std::vector<std::pair<char, int>> tokens;
     for (auto const token : std::views::split(input, ", "sv)) {
-        char const letter{token[0]};
 #if GCC_VERSION > 120000
+        char const letter{token[0]};
         int const digits{std::stoi(std::string(std::string_view(token | std::views::drop(1))))};
 #endif
+        char const letter{'a'};
         int const digits{0};
         tokens.emplace_back(letter, digits);
     }
