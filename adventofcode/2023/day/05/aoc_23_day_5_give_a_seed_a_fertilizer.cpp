@@ -167,10 +167,11 @@ void read_input()
   std::getline(std::cin, line);
   assert(line.empty());
 
-  auto read_map = [&line](std::string_view map_name, map& m)
+  auto read_map = [&line](std::string const& map_name, map& m)
   {
     std::getline(std::cin, line);
-    assert(line==std::format("{} map:", map_name));
+    using namespace std::string_literals;
+    assert(line == map_name + " map:"s);
 
     for(;;)
     {
