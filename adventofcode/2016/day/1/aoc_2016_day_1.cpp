@@ -17,9 +17,10 @@ auto getinput() -> std::vector<std::pair<char, int>> {
 #if GCC_VERSION > 120000
         char const letter{token[0]};
         int const digits{std::stoi(std::string(std::string_view(token | std::views::drop(1))))};
-#endif
+#else
         char const letter{'a'};
         int const digits{0};
+#endif
         tokens.emplace_back(letter, digits);
     }
     return tokens;
