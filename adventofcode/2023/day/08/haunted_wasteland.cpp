@@ -1,5 +1,7 @@
 #include <bits/stdc++.h>
 
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+
 using std::string;
 
 void read_input();
@@ -56,6 +58,7 @@ void read_input()
   }
 }
 
+// TODO end-to-end part two (cf. d251eef)
 template<typename integer> integer solve(bool is_part_two)
 {
   integer ans{0};
@@ -71,7 +74,11 @@ template<typename integer> integer solve(bool is_part_two)
     else if(instructions[i]=='R')
       s = M.at(s).second;
     else
+#if GCC_VERSION > 120000
       throw std::domain_error(std::format("Instruction is neither L nor R: {}.", instructions[i]));
+#else
+      throw std::domain_error("Instruction is neither L nor R: " + std::string(1, instructions[i]) + ".");
+#endif
 
     i = (i+1)%static_cast<int>((instructions.length()));
     ans++;

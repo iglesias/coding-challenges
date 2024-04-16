@@ -6,9 +6,6 @@
 #include <vector>
 
 #define   FOR(i, a, b)    for (decltype(b) i = (a) ; i < (b) ; ++i)
-#define   REP(i, n)       FOR(i, 0, n)
-#define   RFOR(i, b, a)   for (decltype(a) i = (b) ; i > (a) ; --i)
-#define   RREP(i, n)      RFOR(i, n, 0)
 
 struct point { int x, y, z; point(int x, int y, int z) : x(x), y(y), z(z) {} };
 
@@ -20,8 +17,14 @@ bool operator==(point const& p, point const& q)
 using std::pair;
 using std::vector;
 
+#define GCC_VERSION (__GNUC__ * 10000 \
+                     + __GNUC_MINOR__ * 100 \
+                     + __GNUC_PATCHLEVEL__)
+
 using std::ranges::count_if;
+#if GCC_VERSION > 120000
 using std::ranges::fold_left;
+#endif
 using std::ranges::sort;
 
 using brick = pair<point, point>;
@@ -107,7 +110,7 @@ bool is_supported(brick b, vector<brick> const& bricks){
 }
 
 void gravity(vector<brick>& bricks){
-  std::ranges::sort(bricks, [](brick const& lhs, brick const& rhs){ return lhs.first.z < rhs.first.z; });
+  sort(bricks, [](brick const& lhs, brick const& rhs){ return lhs.first.z < rhs.first.z; });
   vector<brick> lower_bricks;
   for(brick& b : bricks){
     while(!is_supported(b, lower_bricks)) b.first.z--, b.second.z--;
@@ -141,8 +144,12 @@ int chainsize(brick b, vector<brick> const& bricks)
 pair<int, int> solve(vector<brick>& bricks)
 {
   gravity(bricks);
+#if GCC_VERSION > 120000
   return std::make_pair(count_if(bricks,
                                  [&bricks](brick b){ return disintegrable(b, bricks);}),
                         fold_left(bricks, 0,
                                   [&bricks](int n, brick b){ return n+chainsize(b, bricks);}));
+#else
+  return std::make_pair(0, 0);
+#endif
 }

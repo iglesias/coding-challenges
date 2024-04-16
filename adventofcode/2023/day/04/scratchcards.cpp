@@ -6,6 +6,8 @@
 #include <utility>
 #include <vector>
 
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+
 int main()
 {
   auto ans{std::make_pair(0,0)};
@@ -39,7 +41,9 @@ int main()
     for(int j{0}; j < matching_numbers_per_card[i]; j++)
       num_cards[i+1+j] += num_cards[i];
 
+#if GCC_VERSION > 120000
   ans.second = std::ranges::fold_left(num_cards, 0, std::plus<int>());
+#endif
 
   std::cout << "Part one: " << ans.first
             << ".\nPart two: " << ans.second << ".\n";
