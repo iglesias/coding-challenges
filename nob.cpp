@@ -24,6 +24,20 @@ void build_kattis_c_files() {
     }
 }
 
+void build_custom_cpp_file(std::string_view filename) {
+  Cstr tool_path = PATH("custom", filename.data());
+  CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path);
+}
+
+void build_custom_cpp_files() {
+  for (auto const& entry : fs::directory_iterator("custom"))
+    if (fs::is_regular_file(entry.path())) {
+      auto const filename = entry.path().filename().string();
+      if (filename.ends_with(".cpp") or filename.ends_with("cc"))
+        build_custom_cpp_file(filename);
+    }
+}
+
 void build_cpp_file(std::string_view filename) {
   Cstr tool_path = PATH(filename.data());
   CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path);
@@ -64,6 +78,8 @@ int main(int argc, char* argv[]) {
   GO_REBUILD_URSELF(argc, argv);
 
   build_kattis_c_files();
-  build_directory_cpp_files("adventofcode");
+  build_custom_cpp_files();
+  //build_directory_cpp_files("adventofcode");
+  //build_directory_cpp_files("leetcode");
   run_examples();
 }
