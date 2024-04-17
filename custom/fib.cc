@@ -30,7 +30,11 @@ ull fib_slow(short n) {
 }
 
 int main(int argc, char* argv[]) {
-  int n = atoi(argv[1]);
+  if (argc != 3) {
+    std::cerr << "fib: missing operands.\nUsage: fib n cache|tail|slow.\n";
+    std::exit(2);
+  }
+  short const n{static_cast<short>(atoi(argv[1]))};
   if (strcmp(argv[2], "tail") == 0)
     std::cout << fib_tail(n) << std::endl;
   else if (strcmp(argv[2], "cache") == 0)

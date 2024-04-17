@@ -9,8 +9,9 @@
  * Quicksort problem from www.hackerrank.com
  */
 
-#include <vector>
 #include <iostream>
+#include <numeric>
+#include <vector>
 
 using namespace std;
 
@@ -39,13 +40,13 @@ int partition(vector<int>& ar, int lo, int hi)
     
     int p = ar[lo];
     int j = lo;
-    for (int i = 0; i < smaller.size(); ++i)
+    for (int i = 0; i < static_cast<int>(smaller.size()); ++i)
         ar[j++] = smaller[i];
     
     int pi = j; 
     ar[j++] = p;
     
-    for (int i = 0; i < larger.size(); ++i)
+    for (int i = 0; i < static_cast<int>(larger.size()); ++i)
         ar[j++] = larger[i];
         
     return pi;
@@ -64,7 +65,7 @@ void quicksort(vector<int>& ar, int lo, int hi)
 
 void quicksort(vector<int>&  ar)
 {
-    quicksort(ar, 0, ar.size()-1);
+    quicksort(ar, 0, static_cast<int>(ar.size())-1);
 }
 
 int main(void)
@@ -72,7 +73,7 @@ int main(void)
     int N;
     cin >> N;
     vector<int> ar(N);
-    for (int i = 0; i < N; ++i) cin >> ar[i];
+    std::iota(ar.begin(), ar.end(), 0);
     quicksort(ar);
     return 0;
 }

@@ -1,9 +1,8 @@
-/* This software is distributed under the MIT license (see LICENSE file in the
- * root directory)
- *
- * Copyright (c) 2013 Fernando J. Iglesias Garcia
+/*
+ * 2013 Fernando J. Iglesias Garcia
  */
 
+#include <numeric>
 #include <iostream>
 #include <iterator>
 #include <set>
@@ -25,7 +24,7 @@ int insertion_swaps(const vector<int>& ar)
 	for (unsigned int i = 0; i < ar.size(); ++i)
 	{
 		// rank operation, could be done faster using an order statistics tree
-		count += distance(s.upper_bound(ar[i]), s.end());
+		count += static_cast<int>(distance(s.upper_bound(ar[i]), s.end()));
 		s.insert(ar[i]);
 	}
 
@@ -67,7 +66,7 @@ void quicksort(vector<int>& ar, int lo, int hi, int& count)
 int quicksort_swaps(vector<int> ar)
 {
 	int count = 0;
-	quicksort(ar, 0, ar.size()-1, count);
+	quicksort(ar, 0, static_cast<int>(ar.size())-1, count);
 	return count;
 }
 
@@ -76,7 +75,7 @@ int main()
 	int n;
 	cin >> n;
 	vector<int> ar(n);
-	for (int i = 0; i < n; ++i) cin >> ar[i];
+  std::iota(ar.begin(), ar.end(), 0);
 
 	cout << insertion_swaps(ar) - quicksort_swaps(ar) << endl;
 	return 0;

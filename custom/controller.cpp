@@ -55,13 +55,13 @@ std::vector<std::string> bfs(NodeWithVisitedList start)
 		if (n.row > 0 && !n.visited[n.row-1][n.col])
 			q.push(NodeWithVisitedList(n.row-1, n.col, n.prefix, n.visited));
 		// down
-		if (n.row < panel.size()-1 && !n.visited[n.row+1][n.col])	
+		if (n.row < static_cast<int>(panel.size())-1 && !n.visited[n.row+1][n.col])
 			q.push(NodeWithVisitedList(n.row+1, n.col, n.prefix, n.visited));
 		// left
 		if (n.col > 0 && !n.visited[n.row][n.col-1])
 			q.push(NodeWithVisitedList(n.row, n.col-1, n.prefix, n.visited));
 		// right
-		if (n.col < panel[n.row].length()-1 && !n.visited[n.row][n.col+1])
+		if (n.col < static_cast<int>(panel[n.row].length())-1 && !n.visited[n.row][n.col+1])
 			q.push(NodeWithVisitedList(n.row, n.col+1, n.prefix, n.visited));
 	}
 
@@ -86,10 +86,10 @@ std::set<std::string> dfs(Node n)
 	if (visited.size() == 0)
 	{
 		visited.resize(panel.size());
-		for (int i = 0; i < visited.size(); i++)
+		for (int i = 0; i < static_cast<int>(visited.size()); i++)
 		{
 			visited[i].resize(panel[i].length());
-			for (int j = 0; j < visited[i].size(); j++)
+			for (int j = 0; j < static_cast<int>(visited[i].size()); j++)
 				visited[i][j] = false;
 		}
 	}
@@ -100,13 +100,13 @@ std::set<std::string> dfs(Node n)
 	if (n.row > 0 && !visited[n.row-1][n.col])
 		Merge(words, dfs(Node(n.row-1, n.col, n.prefix)));
 	// down
-	if (n.row < panel.size()-1 && !visited[n.row+1][n.col])
+	if (n.row < static_cast<int>(panel.size())-1 && !visited[n.row+1][n.col])
 		Merge(words, dfs(Node(n.row+1, n.col, n.prefix)));
 	// left
 	if (n.col > 0 && !visited[n.row][n.col-1])
 		Merge(words, dfs(Node(n.row, n.col-1, n.prefix)));
 	// right
-	if (n.col < panel[n.row].length() && !visited[n.row][n.col+1])
+	if (n.col < static_cast<int>(panel[n.row].length()) && !visited[n.row][n.col+1])
 		Merge(words, dfs(Node(n.row, n.col+1, n.prefix)));
 
 	return words;

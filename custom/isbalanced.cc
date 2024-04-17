@@ -150,7 +150,7 @@ void BinaryTree::traverse(BinaryTree* tree) {
 }
 
 int main() {
-	srand(time(NULL));
+  std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
 /*
 	BinaryTree* balancedTree = new BinaryTree(100);

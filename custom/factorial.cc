@@ -17,11 +17,15 @@ ull factorial_fast(int n, ull acc=1) {
 }
 
 int main(int argc, char* argv[]) {
-  int n = atoi(argv[1]);
+  if (argc != 3) {
+    std::cerr << "factorial: missing operands.\nUsage: factorial n slow|fast.\n";
+    std::exit(2);
+  }
+  int const n = atoi(argv[1]);
   if (strcmp(argv[2], "slow") == 0)
     std:: cout << factorial_slow(n) << std::endl;
   else if (strcmp(argv[2], "fast") == 0)
     std::cout << factorial_fast(n) << std::endl; 
   else
-    std::cout << "Invalid argument " << argv[2] << ". Allowed values are slow, fast.\n";
+    std::cout << "Invalid argument " << argv[2] << ". The options are slow and fast.\n";
 }
