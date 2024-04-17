@@ -23,8 +23,7 @@
  *
  */
 
-#ifndef NOBUILD_H_
-#define NOBUILD_H_
+#pragma once
 
 #define _POSIX_C_SOURCE 200809L
 #include <sys/types.h>
@@ -40,7 +39,7 @@ typedef int Fd;
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
@@ -202,7 +201,7 @@ void chain_echo(Chain chain);
             Cmd cmd = {                                                \
                 .line = {                                              \
                     .elems = (Cstr*) argv,                             \
-                    .count = argc,                                     \
+                    .count = static_cast<size_t>(argc),                                     \
                 },                                                     \
             };                                                         \
             INFO("CMD: %s", cmd_show(cmd));                            \
@@ -279,8 +278,6 @@ void PANIC(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 char *shift_args(int *argc, char ***argv);
 
-#endif  // NOBUILD_H_
-
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef NOBUILD_IMPLEMENTATION
@@ -290,7 +287,7 @@ Cstr_Array cstr_array_append(Cstr_Array cstrs, Cstr cstr)
     Cstr_Array result = {
         .count = cstrs.count + 1
     };
-    result.elems = malloc(sizeof(result.elems[0]) * result.count);
+    result.elems = reinterpret_cast<const char**>(std::malloc(sizeof(result.elems[0]) * result.count));
     memcpy(result.elems, cstrs.elems, cstrs.count * sizeof(result.elems[0]));
     result.elems[cstrs.count] = cstr;
     return result;
@@ -312,7 +309,7 @@ Cstr cstr_no_ext(Cstr path)
     }
 
     if (n > 0) {
-        char *result = malloc(n);
+        char *result = reinterpret_cast<char*>(std::malloc(n));
         memcpy(result, path, n);
         result[n - 1] = '\0';
 
@@ -341,7 +338,7 @@ Cstr_Array cstr_array_make(Cstr first, ...)
     }
     va_end(args);
 
-    result.elems = malloc(sizeof(result.elems[0]) * result.count);
+    result.elems = reinterpret_cast<const char**>(std::malloc(sizeof(result.elems[0]) * result.count));
     if (result.elems == NULL) {
         PANIC("could not allocate memory: %s", strerror(errno));
     }
@@ -373,7 +370,7 @@ Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs)
     }
 
     const size_t result_len = (cstrs.count - 1) * sep_len + len + 1;
-    char *result = malloc(sizeof(char) * result_len);
+    char *result = reinterpret_cast<char*>(std::malloc(sizeof(char) * result_len));
     if (result == NULL) {
         PANIC("could not allocate memory: %s", strerror(errno));
     }
@@ -560,7 +557,7 @@ Chain chain_build_from_tokens(Chain_Token first, ...)
     }
     va_end(args);
 
-    result.cmds.elems = malloc(sizeof(result.cmds.elems[0]) * result.cmds.count);
+    result.cmds.elems = reinterpret_cast<Cmd*>(malloc(sizeof(result.cmds.elems[0]) * result.cmds.count));
     if (result.cmds.elems == NULL) {
         PANIC("could not allocate memory: %s", strerror(errno));
     }
@@ -585,7 +582,7 @@ void chain_run_sync(Chain chain)
         return;
     }
 
-    Pid *cpids = malloc(sizeof(Pid) * chain.cmds.count);
+    Pid *cpids = reinterpret_cast<Pid*>(malloc(sizeof(Pid) * chain.cmds.count));
 
     Pipe pip = {0};
     Fd fdin = 0;
@@ -663,7 +660,7 @@ void chain_echo(Chain chain)
 
 Cstr path_get_current_dir()
 {
-    char *buffer = (char*) malloc(PATH_MAX);
+    char *buffer = reinterpret_cast<char*>(std::malloc(PATH_MAX));
     if (getcwd(buffer, PATH_MAX) == NULL) {
         PANIC("could not get current directory: %s", strerror(errno));
     }
@@ -733,7 +730,7 @@ void path_mkdirs(Cstr_Array path)
     size_t seps_count = path.count - 1;
     const size_t sep_len = strlen(PATH_SEP);
 
-    char *result = malloc(len + seps_count * sep_len + 1);
+    char *result = reinterpret_cast<char*>(std::malloc(len + seps_count * sep_len + 1));
 
     len = 0;
     for (size_t i = 0; i < path.count; ++i) {
