@@ -45,6 +45,22 @@ void build_cpp_file(std::string_view filename) {
   CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path);
 }
 
+void build_leetcode_cpp_files() {
+  for (auto const& entry : fs::directory_iterator("leetcode"))
+    if (fs::is_regular_file(entry.path())) {
+      auto const filename = entry.path().filename().string();
+      if (filename == "3012.cpp") {
+        Cstr tool_path = PATH(("leetcode/" + filename).c_str());
+        CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "array");
+        CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "algorithm");
+        CMD("g++", "-std=c++20", "-fmodules-ts", "-Wall", "-Wextra", "-pedantic", "-Wconversion", "-o", NOEXT(tool_path), tool_path);
+        continue;
+      }
+      if (filename.ends_with(".cpp"))
+        build_cpp_file("leetcode/" + filename);
+    }
+}
+
 void build_codeforces_cpp_files() {
   std::queue<std::string> directoriesQ;
   directoriesQ.push("codeforces"s);
@@ -108,10 +124,10 @@ void run_examples() {
 int main(int argc, char* argv[]) {
   GO_REBUILD_URSELF(argc, argv);
 
-  build_kattis_c_files();
-  build_custom_cpp_files();
+  //build_kattis_c_files();
+  //build_custom_cpp_files();
   //build_directory_cpp_files("adventofcode");
-  //build_directory_cpp_files("leetcode");
+  build_leetcode_cpp_files();
   //build_codeforces_cpp_files();
   run_examples();
 }
