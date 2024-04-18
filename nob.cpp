@@ -6,9 +6,11 @@
 #include <string_view>
 
 #define CFLAGS    "-Wall", "-Wextra", "-std=c2x", "-pedantic"
-#define CPPFLAGS  "-Wall", "-Wextra", "-std=c++23", "-pedantic", "-Wconversion", "-Wfatal-errors", "-fsanitize=undefined,address"
+#define CPPFLAGS  "-Wall", "-Wextra", "-std=c++23", "-pedantic", "-Wconversion"
 
 namespace fs = std::filesystem;
+
+using namespace std::string_literals;  // for operator""s
 
 void build_kattis_c_file(std::string_view filename) {
   Cstr tool_path = PATH("kattis", filename.data());
@@ -41,6 +43,35 @@ void build_custom_cpp_files() {
 void build_cpp_file(std::string_view filename) {
   Cstr tool_path = PATH(filename.data());
   CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path);
+}
+
+void build_codeforces_cpp_files() {
+  std::queue<std::string> directoriesQ;
+  directoriesQ.push("codeforces"s);
+  while (!directoriesQ.empty()) {
+    for (auto const& entry : fs::directory_iterator(directoriesQ.front()))
+      if (fs::is_regular_file(entry.path())) {
+        auto const filename = entry.path().filename().string();
+        // FIXME: auto-detect when compilation fails with modern standards and if desired
+        // to keep the old file as it is, revert here to using older -std= option.
+        if (filename == "pocketbook.cc" or filename == "steps.cc" or filename == "phonenumbers.cc") {
+          Cstr tool_path = PATH(std::string_view(directoriesQ.front() + "/" + filename).data());
+          CMD("g++", "-Wall", "-Wextra", "-std=gnu++17", "-pedantic", "-Wconversion", "-o", NOEXT(tool_path), tool_path);
+          continue;
+        } else if (filename == "marks.cc") {
+          Cstr tool_path = PATH(std::string_view(directoriesQ.front() + "/" + filename).data());
+          CMD("g++", "-Wall", "-Wextra", "-std=gnu++11", "-pedantic", "-Wconversion", "-o", NOEXT(tool_path), tool_path);
+          continue;
+        }
+        //
+        if (filename.ends_with(".cc") or filename.ends_with(".cpp")) {
+          build_cpp_file(directoriesQ.front() + "/" + filename);
+        }
+      } else if (fs::is_directory(entry.path())) {
+        directoriesQ.push(directoriesQ.front() + "/" + entry.path().filename().string());
+      }
+    directoriesQ.pop();
+  }
 }
 
 void build_directory_cpp_files(std::string const& root_directory) {
@@ -81,5 +112,6 @@ int main(int argc, char* argv[]) {
   build_custom_cpp_files();
   //build_directory_cpp_files("adventofcode");
   //build_directory_cpp_files("leetcode");
+  //build_codeforces_cpp_files();
   run_examples();
 }
