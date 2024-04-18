@@ -7,11 +7,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: actions/checkout@v4
-      #- name: party dependencies
-      #  run: |
-      #    sudo apt-get update
-      #    sudo apt-get install -q2 googletest
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: party dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -q2 googletest
       - name: Build with nob
         run: |
           g++ -std=c++20 -o nob nob.cpp
