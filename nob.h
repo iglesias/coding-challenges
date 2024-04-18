@@ -163,8 +163,7 @@ void chain_echo(Chain chain);
     } while(0)
 
 #ifndef REBUILD_URSELF
-//TODO iglesias: remove -fpermissive.
-#  define REBUILD_URSELF(binary_path, source_path) CMD("g++", "-std=c++20", "-fpermissive", "-o", binary_path, source_path)
+#  define REBUILD_URSELF(binary_path, source_path) CMD("g++", "-std=c++20", "-o", binary_path, source_path)
 #endif
 
 // Go Rebuild Urself™ Technology
