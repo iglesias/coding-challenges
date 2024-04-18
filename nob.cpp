@@ -6,7 +6,7 @@
 #include <string_view>
 
 #define CFLAGS    "-Wall", "-Wextra", "-std=c2x", "-pedantic"
-#define CPPFLAGS  "-Wall", "-Wextra", "-std=c++23", "-pedantic", "-Wconversion", "-Wfatal-errors", "-fsanitize=undefined,address"
+#define CPPFLAGS  "-Wall", "-Wextra", "-std=c++23", "-pedantic", "-Wconversion"
 
 namespace fs = std::filesystem;
 
