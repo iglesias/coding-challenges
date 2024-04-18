@@ -42,7 +42,7 @@ void build_custom_cpp_files() {
 
 void build_cpp_file(std::string_view filename) {
   Cstr tool_path = PATH(filename.data());
-  CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path);
+  CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path, "-lgtest");
 }
 
 void build_leetcode_cpp_files() {
