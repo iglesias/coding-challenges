@@ -9,9 +9,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install GoogleTest
+      - name: Install GoogleTest and GCC 13
         run: sudo apt-get install libgtest-dev gcc-13
       - name: Build & Test
         run: |
+          g++ --version
+          g++-13 --version
+          alias g++='g++-13'
           g++ -std=c++20 -o nob nob.cpp
           ./nob
