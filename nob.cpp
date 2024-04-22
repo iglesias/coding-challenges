@@ -42,7 +42,29 @@ void build_custom_cpp_files() {
 
 void build_cpp_file(std::string_view filename) {
   Cstr tool_path = PATH(filename.data());
-  CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path);
+  CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path, "-lgtest");
+}
+
+void run_gtest_file(std::string_view filename) {
+  Cstr path = PATH(filename.data());
+  CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest");
+  CMD(NOEXT(path));
+}
+
+void run_leetcode_cpp_files() {
+  for (auto const& entry : fs::directory_iterator("leetcode"))
+    if (fs::is_regular_file(entry.path())) {
+      auto const filename = entry.path().filename().string();
+      if (filename == "3012.cpp") {
+        Cstr tool_path = PATH(("leetcode/" + filename).c_str());
+        CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "array");
+        CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "algorithm");
+        CMD("g++", "-std=c++20", "-fmodules-ts", "-Wall", "-Wextra", "-pedantic", "-Wconversion", "-o", NOEXT(tool_path), tool_path);
+        continue;
+      }
+      if (filename.ends_with(".cpp"))
+        run_gtest_file("leetcode/" + filename);
+    }
 }
 
 void build_codeforces_cpp_files() {
@@ -90,28 +112,13 @@ void build_directory_cpp_files(std::string const& root_directory) {
   }
 }
 
-void run_example(const char *example) {
-  Cstr example_path = PATH("uva", example);
-  CMD("g++", CPPFLAGS, "-o", NOEXT(example_path), example_path, "-lgtest");
-  CMD(NOEXT(example_path));
-}
-
-void run_examples() {
-  for (const auto& entry : fs::directory_iterator("uva"))
-    if (fs::is_regular_file(entry.path())) {
-      auto filename = entry.path().filename().string();
-      if (filename == "summing_digits.cpp")
-        run_example(filename.c_str());
-    }
-}
-
 int main(int argc, char* argv[]) {
   GO_REBUILD_URSELF(argc, argv);
 
-  build_kattis_c_files();
-  build_custom_cpp_files();
+  //build_kattis_c_files();
+  //build_custom_cpp_files();
   //build_directory_cpp_files("adventofcode");
-  //build_directory_cpp_files("leetcode");
   //build_codeforces_cpp_files();
-  run_examples();
+  //run_gtest_file("uva/summing_digits.cpp");
+  run_leetcode_cpp_files();
 }
