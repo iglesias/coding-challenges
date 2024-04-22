@@ -13,6 +13,7 @@ bool f0(std::vector<int> const& nums){
   for(int num : nums) if (2 < ++counter[num-1]) return false;
   return true;}
 
+#if GCC_VERSION > 120000
 bool f1(std::vector<int>& nums){
   using std::views::chunk_by;
   using std::views::transform;
@@ -23,6 +24,7 @@ bool f1(std::vector<int>& nums){
             | chunk_by(std::not_fn(not_equal_to{}))
             | transform([](auto&& chunk){ return distance(chunk); });
   return *std::ranges::max_element(view) <= 2;}
+#endif
 
 std::vector<int> get_random_input(){
   std::random_device rd;
