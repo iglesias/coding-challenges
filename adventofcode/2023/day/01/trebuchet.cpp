@@ -78,7 +78,6 @@ constexpr bool is_digit(std::string_view try_digit) {
   for (unsigned i{0}; i < digits.size(); i++)
     if (try_digit == digits[i])
       return true;
-
   return false;
 }
 

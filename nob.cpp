@@ -15,6 +15,7 @@
 namespace fs = std::filesystem;
 
 using namespace std::string_literals;  // for operator""s
+using namespace std::literals;         // for operator""sv
 
 void build_kattis_c_file(std::string_view filename) {
   Cstr path = PATH("kattis", filename.data());
