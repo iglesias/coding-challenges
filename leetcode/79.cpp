@@ -20,8 +20,8 @@ bool exist(vector<vector<char>> const &board, string word, int i, int r, int c,
     return true;
 
   vector<vector<int>> const deltas = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
-  int const m = board.size();
-  int const n = board[0].size();
+  int const m = static_cast<int>(board.size());
+  int const n = static_cast<int>(board[0].size());
   for (auto const &delta : deltas) {
     int const rr = r + delta[0], cc = c + delta[1];
     if (!(rr >= 0 and rr < m and cc >= 0 and cc < n))
