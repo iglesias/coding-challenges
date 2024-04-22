@@ -45,7 +45,13 @@ void build_cpp_file(std::string_view filename) {
   CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path, "-lgtest");
 }
 
-void build_leetcode_cpp_files() {
+void run_gtest_file(std::string_view filename) {
+  Cstr path = PATH(filename.data());
+  CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest");
+  CMD(NOEXT(path));
+}
+
+void run_leetcode_cpp_files() {
   for (auto const& entry : fs::directory_iterator("leetcode"))
     if (fs::is_regular_file(entry.path())) {
       auto const filename = entry.path().filename().string();
@@ -57,7 +63,7 @@ void build_leetcode_cpp_files() {
         continue;
       }
       if (filename.ends_with(".cpp"))
-        build_cpp_file("leetcode/" + filename);
+        run_gtest_file("leetcode/" + filename);
     }
 }
 
@@ -106,21 +112,13 @@ void build_directory_cpp_files(std::string const& root_directory) {
   }
 }
 
-void run_gtest_file(std::string_view filename) {
-  Cstr path = PATH(filename.data());
-  CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest");
-  CMD(NOEXT(path));
-}
-
 int main(int argc, char* argv[]) {
   GO_REBUILD_URSELF(argc, argv);
 
   //build_kattis_c_files();
   //build_custom_cpp_files();
   //build_directory_cpp_files("adventofcode");
-  //build_leetcode_cpp_files();
   //build_codeforces_cpp_files();
-  //run_examples();
-  run_gtest_file("uva/summing_digits.cpp");
-  run_gtest_file("leetcode/752.cpp");
+  //run_gtest_file("uva/summing_digits.cpp");
+  run_leetcode_cpp_files();
 }
