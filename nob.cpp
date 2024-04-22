@@ -106,19 +106,10 @@ void build_directory_cpp_files(std::string const& root_directory) {
   }
 }
 
-void run_example(const char *example) {
-  Cstr example_path = PATH("uva", example);
-  CMD("g++", CPPFLAGS, "-o", NOEXT(example_path), example_path, "-lgtest");
-  CMD(NOEXT(example_path));
-}
-
-void run_examples() {
-  for (const auto& entry : fs::directory_iterator("uva"))
-    if (fs::is_regular_file(entry.path())) {
-      auto filename = entry.path().filename().string();
-      if (filename == "summing_digits.cpp")
-        run_example(filename.c_str());
-    }
+void run_gtest_file(std::string_view filename) {
+  Cstr path = PATH(filename.data());
+  CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest");
+  CMD(NOEXT(path));
 }
 
 int main(int argc, char* argv[]) {
@@ -127,7 +118,9 @@ int main(int argc, char* argv[]) {
   //build_kattis_c_files();
   //build_custom_cpp_files();
   //build_directory_cpp_files("adventofcode");
-  build_leetcode_cpp_files();
+  //build_leetcode_cpp_files();
   //build_codeforces_cpp_files();
-  run_examples();
+  //run_examples();
+  run_gtest_file("uva/summing_digits.cpp");
+  run_gtest_file("leetcode/752.cpp");
 }
