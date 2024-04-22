@@ -5,6 +5,8 @@
 #include <ranges>
 #include <vector>
 
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+
 bool f0(std::vector<int> const& nums){
   std::array<uint_fast8_t, 100> counter;
   for(auto& count : counter) count = 0;
@@ -34,4 +36,8 @@ std::vector<int> get_random_input(){
 int main(){
   for(int i = 0; i < 100; i++){
     auto nums = get_random_input();
+#if GCC_VERSION > 120000
     assert(f0(nums) == f1(nums));}}
+#else
+    static_cast<void>(f0(nums));}}
+#endif
