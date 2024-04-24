@@ -3,23 +3,17 @@
 
 #include <gtest/gtest.h>
 
-struct TreeNode {
-  int val;
-  TreeNode *left;
-  TreeNode *right;
-  TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
-};
+#include "tree.h"
 
 int sumOfLeftLeaves(TreeNode *root) {
   if (!root or (!root->left and !root->right))
     return 0;
   int ans = 0;
   if (root->left) {
-    if (!root->left->left and !root->left->right) {
+    if (!root->left->left and !root->left->right)
       ans += root->left->val;
-    } else {
+    else
       ans += sumOfLeftLeaves(root->left);
-    }
   }
   return ans + sumOfLeftLeaves(root->right);
 }
