@@ -1,5 +1,4 @@
-#include <memory>
-#include <vector>
+#include <stdexcept>
 
 #include <gtest/gtest.h>
 
@@ -19,21 +18,12 @@ int sumOfLeftLeaves(TreeNode *root) {
 }
 
 TEST(sumOfLeftLeaves, SampleInput) {
-  auto root{std::make_unique<TreeNode>(3)};
-
-  // FIXME const construction.
-  std::vector<std::unique_ptr<TreeNode>> otherNodes;
-  otherNodes.push_back(std::make_unique<TreeNode>(9));
-  otherNodes.push_back(std::make_unique<TreeNode>(20));
-  otherNodes.push_back(std::make_unique<TreeNode>(15));
-  otherNodes.push_back(std::make_unique<TreeNode>(7));
-
-  root->left = otherNodes[0].get();
-  root->right = otherNodes[1].get();
-  root->right->left = otherNodes[2].get();
-  root->right->right = otherNodes[3].get();
-
+  const auto& [root, _] = make_tree({3, 9, 20, 15, 7});
   EXPECT_EQ(sumOfLeftLeaves(root.get()), 24);
+}
+
+TEST(make_tree, EmptyVector) {
+  EXPECT_THROW(static_cast<void>(make_tree({})), std::out_of_range);
 }
 
 int main(int argc, char **argv) {
