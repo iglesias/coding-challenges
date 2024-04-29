@@ -31,7 +31,7 @@ void DFS(const int i = 0, const int parent = -1) {
 void reRoot(const int i = 0, const int parent = -1) {
     for (const int j : A[i]) {
         if (j == parent) continue;
-        ans[j] = ans[i] + A.size() - 2 * sizes[j];
+        ans[j] = ans[i] + static_cast<int>(A.size()) - 2 * sizes[j];
         reRoot(j, i);
     }
 }
