@@ -121,4 +121,5 @@ int main(int argc, char* argv[]) {
   //build_codeforces_cpp_files();
   //run_gtest_file("uva/summing_digits.cpp");
   run_leetcode_cpp_files();
+  build_cpp_file("adventofcode/2023/day/01/trebuchet.cpp");
 }
