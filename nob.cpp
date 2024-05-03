@@ -8,6 +8,8 @@
 #define CFLAGS    "-Wall", "-Wextra", "-std=c2x", "-pedantic"
 #define CPPFLAGS  "-Wall", "-Wextra", "-std=c++23", "-pedantic", "-Wconversion"
 
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+
 namespace fs = std::filesystem;
 
 using namespace std::string_literals;  // for operator""s
@@ -121,5 +123,7 @@ int main(int argc, char* argv[]) {
   //build_codeforces_cpp_files();
   //run_gtest_file("uva/summing_digits.cpp");
   run_leetcode_cpp_files();
+#if GCC_VERSION > 120000
   build_cpp_file("adventofcode/2023/day/01/trebuchet.cpp");
+#endif
 }

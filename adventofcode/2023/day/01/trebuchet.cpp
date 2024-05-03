@@ -1,3 +1,5 @@
+// g++ trebuchet.cpp -std=c++23 -fsanitize=address,pointer-overflow,signed-integer-overflow,undefined -Wall -Wextra -pedantic -O3
+
 #include <algorithm>
 #include <array>
 #include <iostream>
