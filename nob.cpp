@@ -1,9 +1,11 @@
 #define NOBUILD_IMPLEMENTATION
 #include "./nob.h"
 
+#include <cassert>
 #include <filesystem>
 #include <queue>
 #include <string_view>
+#include <vector>
 
 #define CFLAGS    "-Wall", "-Wextra", "-std=c2x", "-pedantic"
 #define CPPFLAGS  "-Wall", "-Wextra", "-std=c++23", "-pedantic", "-Wconversion"
@@ -45,16 +47,45 @@ void build_cpp_file(std::string_view filename) {
   CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path, "-lgtest");
 }
 
-void run_gtest_file(std::string_view filename) {
+void compile_and_run_gtest_file(std::string_view filename) {
   Cstr path = PATH(filename.data());
   CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest");
   CMD(NOEXT(path));
 }
 
-void run_leetcode_cpp_files() {
+Pid compile_gtest_file_async(std::string_view filename) {
+  Cstr path = PATH(filename.data());
+  Pid pid = cmd_run_async(MAKE_CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest"), NULL, NULL);
+  return pid;
+}
+
+Pid run_gtest_file_async(std::string_view filename) {
+  return cmd_run_async(MAKE_CMD(NOEXT(PATH(filename.data()))), NULL, NULL);
+}
+
+void work_out_leetcode() {
   for (auto const& entry : fs::directory_iterator("leetcode"))
     if (fs::is_regular_file(entry.path())) {
       auto const filename = entry.path().filename().string();
+      if (filename == "3012.cpp") {
+        /*
+        Cstr tool_path = PATH(("leetcode/" + filename).c_str());
+        CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "array");
+        CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "algorithm");
+        CMD("g++", "-std=c++20", "-fmodules-ts", "-Wall", "-Wextra", "-pedantic", "-Wconversion", "-o", NOEXT(tool_path), tool_path);
+        */
+        continue;
+      }
+      if (filename.ends_with(".cpp"))
+        compile_and_run_gtest_file("leetcode/" + filename);
+    }
+}
+
+void work_out_leetcode_async() {
+  std::vector<Pid> pids;
+  for (const auto& entry : fs::directory_iterator("leetcode"))
+    if (fs::is_regular_file(entry.path())) {
+      const std::string& filename = entry.path().filename().string();
       if (filename == "3012.cpp") {
         Cstr tool_path = PATH(("leetcode/" + filename).c_str());
         CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "array");
@@ -63,8 +94,22 @@ void run_leetcode_cpp_files() {
         continue;
       }
       if (filename.ends_with(".cpp"))
-        run_gtest_file("leetcode/" + filename);
+        pids.push_back(compile_gtest_file_async("leetcode/" + filename));
     }
+
+  for (const Pid& pid : pids) pid_wait(pid);
+
+  pids.clear();
+
+  for (const auto& entry : fs::directory_iterator("leetcode"))
+    if (fs::is_regular_file(entry.path())) {
+      const std::string& filename = entry.path().filename().string();
+      if (filename == "3012.cpp") continue;
+      if (filename.ends_with(".cpp"))
+        pids.push_back(run_gtest_file_async("leetcode/" + filename));
+    }
+
+  for (const Pid& pid : pids) pid_wait(pid);
 }
 
 void build_codeforces_cpp_files() {
@@ -115,10 +160,12 @@ void build_directory_cpp_files(std::string const& root_directory) {
 int main(int argc, char* argv[]) {
   GO_REBUILD_URSELF(argc, argv);
 
+  // FIXME naming, build and compile are synonyms.
   //build_kattis_c_files();
   //build_custom_cpp_files();
   //build_directory_cpp_files("adventofcode");
   //build_codeforces_cpp_files();
-  //run_gtest_file("uva/summing_digits.cpp");
-  run_leetcode_cpp_files();
+  //compile_and_run_gtest_file("uva/summing_digits.cpp");
+  work_out_leetcode_async(); // ~ 2 seconds compiling 8 files
+  //work_out_leetcode(); // ~ 8 seconds compiling 8 files
 }

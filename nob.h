@@ -111,6 +111,13 @@ typedef struct {
         cmd_run_sync(cmd);                              \
     } while (0)
 
+#define MAKE_CMD(...)                                 \
+      ({Cmd cmd = {                                   \
+          .line = cstr_array_make(__VA_ARGS__, NULL)  \
+      };                                              \
+      INFO("CMD: %s", cmd_show(cmd));                 \
+      cmd;})                                          \
+
 typedef enum {
     CHAIN_TOKEN_END = 0,
     CHAIN_TOKEN_IN,
