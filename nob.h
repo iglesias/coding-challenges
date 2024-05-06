@@ -115,7 +115,7 @@ typedef struct {
       ({Cmd cmd = {                                   \
           .line = cstr_array_make(__VA_ARGS__, NULL)  \
       };                                              \
-      /* INFO("MAKE_CMD: %s", cmd_show(cmd)); */      \
+      INFO("MAKE_CMD: %s", cmd_show(cmd));            \
       cmd;})                                          \
 
 typedef enum {
@@ -471,8 +471,6 @@ Cstr cmd_show(Cmd cmd)
 
 Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
 {
-    printf("[INFO] cmd_run_async: %s\n", cmd_show(cmd));
-
     pid_t cpid = fork();
     if (cpid < 0) {
         PANIC("Could not fork child process: %s: %s",
