@@ -1,9 +1,11 @@
 #define NOBUILD_IMPLEMENTATION
 #include "./nob.h"
 
+#include <cassert>
 #include <filesystem>
 #include <queue>
 #include <string_view>
+#include <vector>
 
 #define CFLAGS    "-Wall", "-Wextra", "-std=c2x", "-pedantic"
 #define CPPFLAGS  "-Wall", "-Wextra", "-std=c++23", "-pedantic", "-Wconversion"
@@ -15,8 +17,8 @@ namespace fs = std::filesystem;
 using namespace std::string_literals;  // for operator""s
 
 void build_kattis_c_file(std::string_view filename) {
-  Cstr tool_path = PATH("kattis", filename.data());
-  CMD("cc", CFLAGS, "-o", NOEXT(tool_path), tool_path);
+  Cstr path = PATH("kattis", filename.data());
+  CMD("cc", CFLAGS, "-o", NOEXT(path), path);
 }
 
 void build_kattis_c_files() {
@@ -29,8 +31,8 @@ void build_kattis_c_files() {
 }
 
 void build_custom_cpp_file(std::string_view filename) {
-  Cstr tool_path = PATH("custom", filename.data());
-  CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path);
+  Cstr path = PATH("custom", filename.data());
+  CMD("g++", CPPFLAGS, "-o", NOEXT(path), path);
 }
 
 void build_custom_cpp_files() {
@@ -42,31 +44,53 @@ void build_custom_cpp_files() {
     }
 }
 
-void build_cpp_file(std::string_view filename) {
-  Cstr tool_path = PATH(filename.data());
-  CMD("g++", CPPFLAGS, "-o", NOEXT(tool_path), tool_path, "-lgtest");
+void build_cpp_file(std::string_view filename)
+{
+    Cstr path = PATH(filename.data());
+    CMD("g++", CPPFLAGS, "-o", NOEXT(path), path);
 }
 
-void run_gtest_file(std::string_view filename) {
-  Cstr path = PATH(filename.data());
-  CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest");
-  CMD(NOEXT(path));
+void build_and_run_gtest_file(std::string_view filename)
+{
+    Cstr path = PATH(filename.data());
+    CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest");
+    CMD(NOEXT(path));
 }
 
-void run_leetcode_cpp_files() {
-  for (auto const& entry : fs::directory_iterator("leetcode"))
-    if (fs::is_regular_file(entry.path())) {
-      auto const filename = entry.path().filename().string();
-      if (filename == "3012.cpp") {
-        Cstr tool_path = PATH(("leetcode/" + filename).c_str());
-        CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "array");
-        CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "algorithm");
-        CMD("g++", "-std=c++20", "-fmodules-ts", "-Wall", "-Wextra", "-pedantic", "-Wconversion", "-o", NOEXT(tool_path), tool_path);
-        continue;
-      }
-      if (filename.ends_with(".cpp"))
-        run_gtest_file("leetcode/" + filename);
-    }
+Pid build_gtest_file_async(std::string_view filename)
+{
+    Cstr path = PATH(filename.data());
+    return cmd_run_async(MAKE_CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest"), NULL, NULL);
+}
+
+Pid run_gtest_file_async(std::string_view filename)
+{
+    return cmd_run_async(MAKE_CMD(NOEXT(PATH(filename.data()))), NULL, NULL);
+}
+
+void work_out_leetcode()
+{
+    std::vector<Pid> pids;
+    for (const auto& entry : fs::directory_iterator("leetcode")) if (fs::is_regular_file(entry.path())) {
+        const std::string& filename = entry.path().filename().string();
+        if (filename == "3012.cpp") {
+            Cstr path = PATH(("leetcode/" + filename).c_str());
+            CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "array");
+            CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "algorithm");
+            CMD("g++", "-std=c++20", "-fmodules-ts", "-Wall", "-Wextra", "-pedantic", "-Wconversion", "-o", NOEXT(path), path);
+            continue; }
+        if (filename.ends_with(".cpp")) pids.push_back(build_gtest_file_async("leetcode/" + filename)); }
+
+    for (const Pid& pid : pids) pid_wait(pid);
+
+    pids.clear();
+
+    for (const auto& entry : fs::directory_iterator("leetcode")) if (fs::is_regular_file(entry.path())) {
+        const std::string& filename = entry.path().filename().string();
+        if (filename == "3012.cpp") continue;
+        if (filename.ends_with(".cpp")) pids.push_back(run_gtest_file_async("leetcode/" + filename)); }
+
+    for (const Pid& pid : pids) pid_wait(pid);
 }
 
 void build_codeforces_cpp_files() {
@@ -79,12 +103,12 @@ void build_codeforces_cpp_files() {
         // FIXME: auto-detect when compilation fails with modern standards and if desired
         // to keep the old file as it is, revert here to using older -std= option.
         if (filename == "pocketbook.cc" or filename == "steps.cc" or filename == "phonenumbers.cc") {
-          Cstr tool_path = PATH(std::string_view(directoriesQ.front() + "/" + filename).data());
-          CMD("g++", "-Wall", "-Wextra", "-std=gnu++17", "-pedantic", "-Wconversion", "-o", NOEXT(tool_path), tool_path);
+          Cstr path = PATH(std::string_view(directoriesQ.front() + "/" + filename).data());
+          CMD("g++", "-Wall", "-Wextra", "-std=gnu++17", "-pedantic", "-Wconversion", "-o", NOEXT(path), path);
           continue;
         } else if (filename == "marks.cc") {
-          Cstr tool_path = PATH(std::string_view(directoriesQ.front() + "/" + filename).data());
-          CMD("g++", "-Wall", "-Wextra", "-std=gnu++11", "-pedantic", "-Wconversion", "-o", NOEXT(tool_path), tool_path);
+          Cstr path = PATH(std::string_view(directoriesQ.front() + "/" + filename).data());
+          CMD("g++", "-Wall", "-Wextra", "-std=gnu++11", "-pedantic", "-Wconversion", "-o", NOEXT(path), path);
           continue;
         }
         //
@@ -114,17 +138,18 @@ void build_directory_cpp_files(std::string const& root_directory) {
   }
 }
 
-int main(int argc, char* argv[]) {
-  GO_REBUILD_URSELF(argc, argv);
+int main(int argc, char* argv[])
+{
+    GO_REBUILD_URSELF(argc, argv);
 
   //build_kattis_c_files();
   //build_custom_cpp_files();
   //build_directory_cpp_files("adventofcode");
   //build_codeforces_cpp_files();
-  //run_gtest_file("uva/summing_digits.cpp");
-  run_leetcode_cpp_files();
+    work_out_leetcode();
+    build_and_run_gtest_file("uva/summing_digits.cpp");
 #if GCC_VERSION > 120000
-  build_cpp_file("adventofcode/2023/day/01/trebuchet.cpp");
+    build_cpp_file("adventofcode/2023/day/01/trebuchet.cpp");
 #endif
-  build_cpp_file("adventofcode/2023/day/02/cube_conundrum.cpp");
+    build_cpp_file("adventofcode/2023/day/02/cube_conundrum.cpp");
 }

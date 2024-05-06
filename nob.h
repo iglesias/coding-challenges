@@ -111,6 +111,13 @@ typedef struct {
         cmd_run_sync(cmd);                              \
     } while (0)
 
+#define MAKE_CMD(...)                                 \
+      ({Cmd cmd = {                                   \
+          .line = cstr_array_make(__VA_ARGS__, NULL)  \
+      };                                              \
+      /* INFO("MAKE_CMD: %s", cmd_show(cmd)); */      \
+      cmd;})                                          \
+
 typedef enum {
     CHAIN_TOKEN_END = 0,
     CHAIN_TOKEN_IN,
@@ -464,6 +471,8 @@ Cstr cmd_show(Cmd cmd)
 
 Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
 {
+    printf("[INFO] cmd_run_async: %s\n", cmd_show(cmd));
+
     pid_t cpid = fork();
     if (cpid < 0) {
         PANIC("Could not fork child process: %s: %s",
