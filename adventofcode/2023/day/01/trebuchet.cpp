@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -78,7 +80,6 @@ constexpr bool is_digit(std::string_view try_digit) {
   for (unsigned i{0}; i < digits.size(); i++)
     if (try_digit == digits[i])
       return true;
-
   return false;
 }
 
@@ -143,7 +144,7 @@ constexpr std::pair<int, int> find_first_and_last_digits(std::string_view in) {
 
 int main() {
   std::string line;
-  int ans_a{0}, ans_b{0};
+  int ans_a{0}, ans_b{0}, ans_a_re{0};
   for (;;) {
     std::getline(std::cin, line);
     if (line.empty())
@@ -154,8 +155,18 @@ int main() {
 
     ans_a += a.first * 10 + a.second;
     ans_b += b.first * 10 + b.second;
+
+    std::smatch matches;
+    std::cout << ">> " << line << std::endl;
+    //assert(std::regex_search(line, matches, std::regex("(\\d)+")));
+    assert(std::regex_search(line, matches, std::regex("(?<!\\d)\\d(?!\\d).*?(?<!\\d)\\d(?!\\d)")));
+    std::pair<int, int> a_re{0, 0};
+    std::cout << ">> " << matches.size() << ' ' << matches[0].str() << ' ' << matches[1].str() << ' ' << matches[4].str() << std::endl;
+    a_re.first = std::stoi(matches[1].str());
+    a_re.second = std::stoi(matches[2].str());
+    ans_a_re += a_re.first*10 + a_re.second;
   }
 
-  std::cout << "Part one: " << ans_a << '\n';
+  std::cout << "Part one: " << ans_a << ' ' << ans_a_re << '\n';
   std::cout << "Part two: " << ans_b << '\n';
 }
