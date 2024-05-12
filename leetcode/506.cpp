@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -7,13 +8,17 @@
 using namespace std;
 
 vector<string> find_relative_ranks(vector<int>&& scores) {
+    if (scores.size() > static_cast<unsigned long>(numeric_limits<unsigned>::max())) {
+	cerr << "The input size (" << scores.size() << ") is too large: scores.size() > numeric_limits<long>::max()\n";
+	return {"ERROR"};
+    }
     vector<int> copy(scores);
     ranges::sort(copy);
     vector<string> placements;
     for (const int score : scores) {
         placements.emplace_back([&](){
-            const unsigned position =
-                    scores.size() - distance(copy.begin(), ranges::lower_bound(copy, score));
+            const auto position = static_cast<long>(scores.size())
+	    				- distance(copy.begin(), ranges::lower_bound(copy, score));
             using namespace literals;
             switch (position) {
                 case 1:  return "Gold Medal"s;
