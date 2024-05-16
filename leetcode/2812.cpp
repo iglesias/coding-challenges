@@ -87,17 +87,17 @@ int solve(vector<vector<int>>& grid) {
 
 
 TEST(FindTheSafestPathInAGrid, i) {
-    const vector<vector<int>> grid = {{1, 0, 0}, {0, 0, 0}, {0, 0, 1}};
+    vector<vector<int>> grid = {{1, 0, 0}, {0, 0, 0}, {0, 0, 1}};
     EXPECT_EQ(solution::solve(grid), 0);
 }
 
 TEST(FindTheSafestPathInAGrid, ii) {
-    const vector<vector<int>> grid = {{0, 0, 1}, {0, 0, 0}, {0, 0, 0}};
+    vector<vector<int>> grid = {{0, 0, 1}, {0, 0, 0}, {0, 0, 0}};
     EXPECT_EQ(solution::solve(grid), 2);
 }
 
 TEST(FindTheSafestPathInAGrid, iii) {
-    const vector<vector<int>> grid = {{0, 0, 0, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}, {1, 0, 0, 0}};
+    vector<vector<int>> grid = {{0, 0, 0, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}, {1, 0, 0, 0}};
     EXPECT_EQ(solution::solve(grid), 2);
 }
 
