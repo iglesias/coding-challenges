@@ -1,0 +1,13 @@
+name: nanobind
+run-name: ${{ github.actor }} is building Python extensions with nanobind
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
