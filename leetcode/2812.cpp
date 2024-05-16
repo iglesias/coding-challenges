@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+using std::make_pair;
 using std::pair;
 using std::vector;
 
@@ -15,7 +16,7 @@ int n;
 const vector<pair<int, int>> deltas = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 
 void transform(vector<vector<int>>& grid) {
-    queue<pair<int, int>> Q;
+    std::queue<pair<int, int>> Q;
     for (int r = 0; r < n; r++) for(int c = 0; c < n; c++)
         if (grid[r][c]) {
             grid[r][c] = 0;
@@ -40,7 +41,7 @@ void transform(vector<vector<int>>& grid) {
 
 using mask_t = std::bitset<400*400>;
 bool f(const vector<vector<int>>& grid, int y) {
-    queue<pair<int, int>> Q;
+    std::queue<pair<int, int>> Q;
     mask_t Qed{};
     Q.push(make_pair(0, 0));
     Qed.set(0);
@@ -69,7 +70,7 @@ int solve(vector<vector<int>>& grid) {
     transform(grid);
 
     // minimum distance from init or goal to any thief:
-    const int x = min(grid[0][0], grid[n - 1][n - 1]);
+    const int x = std::min(grid[0][0], grid[n - 1][n - 1]);
 
     // binary search, but starting the first iteration with the upper bound:
     pair<int, int> interval{0, x};
