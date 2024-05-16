@@ -27,3 +27,5 @@ jobs:
           # pip install -r requirements.txt
       - name: build_nanobind.sh
         run: ./build_nanobind.sh
+      - name: Test nanobind extension
+        run: python test_nob_nanobind_extension.py
