@@ -18,11 +18,11 @@ jobs:
       - name: Python setup
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.11.9'
       - name: Install Python development dependency
         run: |
           sudo apt-get update
-          sudo apt-get install python3.12-dev
+          sudo apt-get install python3.11-dev
           python -m pip install --upgrade pip
           # pip install -r requirements.txt
       - name: build_nanobind.sh
