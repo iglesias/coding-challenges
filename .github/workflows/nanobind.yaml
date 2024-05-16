@@ -15,5 +15,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+      - name: Python setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: build_nanobind.sh
         run: ./build_nanobind.sh
