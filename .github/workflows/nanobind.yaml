@@ -32,4 +32,4 @@ jobs:
       - name: build_nanobind.sh
         run: ./build_nanobind.sh
       - name: Test nanobind extension
-        run: python test_nob_nanobind_extension.py
+        run: python3.11 test_nob_nanobind_extension.py
