@@ -29,7 +29,8 @@ jobs:
           sudo apt-get install python3.11-dev
           python -m pip install --upgrade pip
           # pip install -r requirements.txt
-      - name: build_nanobind.sh
-        run: ./build_nanobind.sh
-      - name: Test nanobind extension
-        run: python3.11 test_nob_nanobind_extension.py
+      - name: Build
+        run: ./build_nb.sh
+      - name: Test
+        working-directory: ${{github.workspace}}
+        run: python3.11 nob.py

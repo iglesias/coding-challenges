@@ -1,7 +1,7 @@
 #define NOBUILD_IMPLEMENTATION
 #include "./nob.h"
 
-#include <cassert>
+#include <array>
 #include <filesystem>
 #include <queue>
 #include <string_view>
@@ -45,10 +45,20 @@ void build_custom_cpp_files() {
     }
 }
 
+template<size_t N>
+void make_and_run_cmd(std::array<Cstr, N> strings)
+{
+    Cmd cmd;
+    cmd.line.count = strings.size();
+    cmd.line.elems = strings.data();
+    INFO("make_and_run_cmd: %s", cmd_show(cmd));
+    cmd_run_sync(cmd);
+}
+
 void build_cpp_file(std::string_view filename)
 {
     Cstr path = PATH(filename.data());
-    CMD("g++", CPPFLAGS, "-o", NOEXT(path), path);
+    make_and_run_cmd(std::array{"g++", CPPFLAGS, "-o", NOEXT(path), path});
 }
 
 void build_and_run_gtest_file(std::string_view filename)
