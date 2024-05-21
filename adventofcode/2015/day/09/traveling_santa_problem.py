@@ -133,7 +133,6 @@ def main():
     mincost, maxcost = dfs(A, fromidx)
     enddfs = time()
     print('dfs:', enddfs-startdfs, mincost, maxcost)
-    startdfs = time()
     return mincost, maxcost
 
 
