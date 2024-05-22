@@ -42,8 +42,7 @@ vector<vector<string>> partition(const string& s) {
 }
 
 TEST(PalindromePartitioning, a) {
-  const vector<string> ans{{"a", "a", "b"}, {"aa", "b"}};
-  EXPECT_EQ(partition("aab"), ans);
+  EXPECT_EQ(partition("aab"), vector<vector<string>>{{"a", "a", "b"}, {"aa", "b"}});
 }
 
 TEST(PalindromePartitioning, b) {
