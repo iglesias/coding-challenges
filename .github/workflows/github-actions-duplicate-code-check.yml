@@ -5,7 +5,9 @@ on: pull_request
 jobs:
   duplicate-code-check:
     name: Check for duplicate code
-    runs-on: ubuntu-20.04
+    run_if:
+      if: startsWith(github.head_ref, 'adventofcode')
+    runs-on: ubuntu-latest
     steps:
       - name: Check for duplicate code
         uses: platisd/duplicate-code-detection-tool@master

@@ -1,33 +1,46 @@
 #define NOBUILD_IMPLEMENTATION
 #include "./nob.h"
 
-#include <cassert>
+#include <array>
+#include <cstdlib>
 #include <filesystem>
 #include <queue>
 #include <string_view>
 #include <vector>
 
-#define CFLAGS    "-Wall", "-Wextra", "-std=c2x", "-pedantic"
-#define CPPFLAGS  "-Wall", "-Wextra", "-std=c++23", "-pedantic", "-Wconversion"
+#define CFLAGS    "-std=c2x",   "-Wall", "-Wextra", "-pedantic"
+#define CPPFLAGS  "-std=c++23", "-Wall", "-Wconversion", "-Wextra", "-pedantic", "-fsanitize=address,pointer-overflow,signed-integer-overflow,undefined"
 
 #define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+
+
+#define MAKE_CMD(...)                                 \
+      ({Cmd cmd = {                                   \
+          .line = cstr_array_make(__VA_ARGS__, NULL)  \
+      };                                              \
+      Cstr cmd_to_show = cmd_show(cmd);               \
+      INFO("MAKE_CMD: %s", cmd_to_show);              \
+      std::free(reinterpret_cast<void*>(              \
+          const_cast<char*>(cmd_to_show)));           \
+      cmd;})                                          \
+
 
 namespace fs = std::filesystem;
 
 using namespace std::string_literals;  // for operator""s
 using namespace std::literals;         // for operator""sv
 
-void build_kattis_c_file(std::string_view filename) {
-  Cstr path = PATH("kattis", filename.data());
-  CMD("cc", CFLAGS, "-o", NOEXT(path), path);
+void build_kattis_c_file(std::string_view path) {
+  Cstr noextpath = NOEXT(path.data());
+  CMD("cc", CFLAGS, "-o", noextpath, path.data());
+  std::free(reinterpret_cast<void*>(const_cast<char *>(noextpath))); // :-O
 }
 
 void build_kattis_c_files() {
   for (auto const& entry : fs::directory_iterator("kattis"))
     if (fs::is_regular_file(entry.path())) {
-      auto const filename = entry.path().filename().string();
-      if (filename.ends_with(".c"))
-        build_kattis_c_file(filename);
+      const std::string& path = entry.path().string();
+      if (path.ends_with(".c")) build_kattis_c_file(path);
     }
 }
 
@@ -45,10 +58,21 @@ void build_custom_cpp_files() {
     }
 }
 
+template<size_t N>
+void make_and_run_cmd(std::array<Cstr, N> strings)
+{
+    Cmd cmd;
+    cmd.line.count = strings.size();
+    cmd.line.elems = strings.data();
+    //TODO FIX leaks.
+    INFO("make_and_run_cmd: %s", cmd_show(cmd));
+    cmd_run_sync(cmd);
+}
+
 void build_cpp_file(std::string_view filename)
 {
     Cstr path = PATH(filename.data());
-    CMD("g++", CPPFLAGS, "-o", NOEXT(path), path);
+    make_and_run_cmd(std::array{"g++", CPPFLAGS, "-o", NOEXT(path), path});
 }
 
 void build_and_run_gtest_file(std::string_view filename)
@@ -58,10 +82,14 @@ void build_and_run_gtest_file(std::string_view filename)
     CMD(NOEXT(path));
 }
 
-Pid build_gtest_file_async(std::string_view filename)
+Pid build_gtest_file_async(std::string_view path)
 {
-    Cstr path = PATH(filename.data());
-    return cmd_run_async(MAKE_CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest"), NULL, NULL);
+    Cstr noextpath = NOEXT(path.data());
+    Cmd cmd = MAKE_CMD("g++", CPPFLAGS, "-o", noextpath, path.data(), "-lgtest");
+    Pid pid = cmd_run_async(cmd, NULL, NULL);
+    std::free(reinterpret_cast<void*>(const_cast<char**>(cmd.line.elems)));
+    std::free(reinterpret_cast<void*>(const_cast<char *>(noextpath))); // :-O
+    return pid;
 }
 
 Pid run_gtest_file_async(std::string_view filename)
@@ -143,7 +171,7 @@ int main(int argc, char* argv[])
 {
     GO_REBUILD_URSELF(argc, argv);
 
-  //build_kattis_c_files();
+    build_kattis_c_files();
   //build_custom_cpp_files();
   //build_directory_cpp_files("adventofcode");
   //build_codeforces_cpp_files();

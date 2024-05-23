@@ -32,7 +32,6 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <fcntl.h>
-#include <limits.h>
 #define PATH_SEP "/"
 typedef pid_t Pid;
 typedef int Fd;
@@ -107,16 +106,14 @@ typedef struct {
         Cmd cmd = {                                     \
             .line = cstr_array_make(__VA_ARGS__, NULL)  \
         };                                              \
-        INFO("CMD: %s", cmd_show(cmd));                 \
+        Cstr cmd_to_show = cmd_show(cmd);               \
+        INFO("CMD: %s", cmd_to_show);                   \
+        std::free(reinterpret_cast<void*>(              \
+              const_cast<char*>(cmd_to_show)));         \
         cmd_run_sync(cmd);                              \
+        std::free(reinterpret_cast<void*>(              \
+            const_cast<char**>(cmd.line.elems)));       \
     } while (0)
-
-#define MAKE_CMD(...)                                 \
-      ({Cmd cmd = {                                   \
-          .line = cstr_array_make(__VA_ARGS__, NULL)  \
-      };                                              \
-      INFO("MAKE_CMD: %s", cmd_show(cmd));            \
-      cmd;})                                          \
 
 typedef enum {
     CHAIN_TOKEN_END = 0,
