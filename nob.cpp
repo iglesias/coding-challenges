@@ -39,11 +39,8 @@ void build_kattis_c_file(std::string_view path) {
 void build_kattis_c_files() {
   for (auto const& entry : fs::directory_iterator("kattis"))
     if (fs::is_regular_file(entry.path())) {
-      const std::string path = entry.path().string();
-      if (path.ends_with(".c")) {
-        build_kattis_c_file(path);
-        break;
-      }
+      const std::string& path = entry.path().string();
+      if (path.ends_with(".c")) build_kattis_c_file(path);
     }
 }
 
@@ -67,6 +64,7 @@ void make_and_run_cmd(std::array<Cstr, N> strings)
     Cmd cmd;
     cmd.line.count = strings.size();
     cmd.line.elems = strings.data();
+    //TODO FIX leaks.
     INFO("make_and_run_cmd: %s", cmd_show(cmd));
     cmd_run_sync(cmd);
 }
@@ -106,7 +104,7 @@ void work_out_leetcode()
         const std::string& filename = entry.path().filename().string();
         if (filename == "3012.cpp") {
             Cstr path = PATH(("leetcode/" + filename).c_str());
-           CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "array");
+            CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "array");
             CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "algorithm");
             CMD("g++", "-std=c++20", "-fmodules-ts", "-Wall", "-Wextra", "-pedantic", "-Wconversion", "-o", NOEXT(path), path);
             continue; }
