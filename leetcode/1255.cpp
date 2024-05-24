@@ -47,7 +47,7 @@ int solve(const vector<string>& words, const vector<int>& scores, vector<string>
     {
         int score = 0;
         for (const string& word : subset) for (const char letter : word) score += scores[letter - 'a'];
-        ans = std::max(ans, scores);
+        ans = std::max(ans, score);
     }
 
     if (words_i == words.size()) return ans;
