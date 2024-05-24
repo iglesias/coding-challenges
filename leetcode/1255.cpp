@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include <gtest/gtest.h>
+
 using std::string;
 using std::vector;
 
