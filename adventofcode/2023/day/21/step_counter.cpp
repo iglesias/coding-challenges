@@ -107,8 +107,6 @@ void solve(int num_steps)
       q = nq;
     }
     print(g);
-    int positions = 0;
-    REP(r, R) REP(c, C) if(g[r][c] == 'O') positions++;
     ans.first = static_cast<int>(q.size());
   }
 
