@@ -79,7 +79,7 @@ queue<ii> make_new_positions(grid const& G, queue<ii>& q)
   queue<ii> nq;
   unordered_set<ii, boost::hash<ii>> seen;
   while(!q.empty()){
-    auto p = q.front();
+    auto const p = q.front();
     q.pop();
     if(seen.contains(p)) continue;
     seen.insert(p);
@@ -100,6 +100,35 @@ queue<ii> make_new_positions(grid const& G, queue<ii>& q)
   return nq;
 }
 
+using num_steps_t = int;
+unsigned long long solve_part_two(grid const& G, ii const& start, num_steps_t const num_steps)
+{
+  queue<pair<ii, num_steps_t>> q;
+  q.emplace(start, 0);
+  unordered_set<pair<ii, num_steps_t>, boost::hash<pair<ii, num_steps_t>>> qed;
+  qed.emplace(start, 0);
+  unsigned long long ans = 0;
+  while(!q.empty()){
+    pair<ii, num_steps_t> const p = q.front();
+    q.pop();
+    if(p.second == num_steps) {
+      ans++;
+      continue;
+    }
+    for(auto const& delta : deltas){
+      ii const pos = make_pair(p.first.first + delta.first, p.first.second + delta.second);
+      if(qed.contains({pos, p.second + 1})) continue;
+      int const rr = ((pos.first % R) + R) % R;
+      int const cc = ((pos.second % C) + C) % C;
+      if(G[rr][cc] != '#'){
+        q.emplace(pos, p.second + 1);
+        qed.emplace(pos, p.second + 1);
+      }
+    }
+  }
+  return ans;
+}
+
 ii get_start_position(grid const& G)
 {
   REPEAT(r, R) REPEAT(c, C) if(G[r][c] == 'S') return make_pair(r, c);
@@ -118,24 +147,25 @@ std::pair<int, unsigned long long> solve(int num_steps)
     grid g;
     for(int i = 0; i < 64; i++){
       g = G;
-      auto nq = paint_grid(G,g,q);
-      q = nq;
+      q = paint_grid(G,g,q);
     }
-    print(g);
+    //print(g);
     ans.first = static_cast<int>(q.size());
   }
 
+  /*
   {
     queue<ii> q;
     q.push(start);
     grid g;
     for(int i = 0; i < num_steps; i++){
-      auto nq = make_new_positions(G,q);
-      q = nq;
+      q = make_new_positions(G,q);
     }
 
     ans.second = static_cast<int>(q.size());
   }
+  */
+  std::cout << "solve_part_two=" << solve_part_two(G, start, num_steps) << std::endl;
 
   return ans;
 }
