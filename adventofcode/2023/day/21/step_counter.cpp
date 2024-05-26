@@ -1,7 +1,9 @@
 #include <cassert>
+#include <chrono>
 #include <iostream>
 #include <queue>
 #include <set>
+#include <thread>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -26,23 +28,26 @@ int R, C;
 
 void print(grid const& g)
 {
-  cout << "\n\n";
+  static bool first_call = true;
+  if (first_call) first_call = false;
+  else            cout << "\033[" << R << "A\033[" << C << "D";
   REPEAT(r, R) cout << g[r] << "\n";
-  cout << "\n\n";
+  using namespace chrono_literals;
+  this_thread::sleep_for(200ms);
 }
 
 int main(int argc, char* argv[])
 {
   read_input();
-  int const num_steps = argc > 1 ? std::stoi(argv[1]) : 64;
-  std::pair const ans = solve(num_steps);
-  std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
+  int const num_steps = argc > 1 ? stoi(argv[1]) : 64;
+  pair const ans = solve(num_steps);
+  cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
 }
 
 void read_input()
 {
-  std::string line;
-  while(std::getline(std::cin, line)){
+  string line;
+  while(getline(cin, line)){
     G.push_back(line);
     R++;
     C = int(line.size());
@@ -54,20 +59,18 @@ vector<ii> const deltas{{0,1}, {0,-1}, {1,0} , {-1,0}};
 queue<ii> paint_grid(grid const& G, grid& g, queue<ii>& q)
 {
   queue<ii> nq;
-  set<ii> seen;
+  set<ii> nqed;
   while(!q.empty()){
     auto p = q.front();
     q.pop();
-    if(seen.contains(p)) continue;
-    seen.insert(p);
     for(auto const& delta : deltas){
       int r = p.first + delta.first, c = p.second + delta.second;
       if(not(0 <= r and r < R and 0 <= c and c < C)) continue;
-      if(seen.contains({r, c})) continue;
+      if(nqed.contains({r, c})) continue;
       if(G[r][c] != '#'){
         g[r][c] = 'O';
         nq.emplace(r, c);
-        seen.emplace(r, c);
+        nqed.emplace(r, c);
       }
     }
   }
@@ -77,23 +80,19 @@ queue<ii> paint_grid(grid const& G, grid& g, queue<ii>& q)
 queue<ii> make_new_positions(grid const& G, queue<ii>& q)
 {
   queue<ii> nq;
-  unordered_set<ii, boost::hash<ii>> seen;
+  unordered_set<ii, boost::hash<ii>> nqed;
   while(!q.empty()){
-    auto const p = q.front();
+    ii const p = q.front();
     q.pop();
-    if(seen.contains(p)) continue;
-    seen.insert(p);
-    for(auto const& delta : deltas){
-      int r = p.first + delta.first, c = p.second + delta.second;
-      if(seen.contains({r, c})) continue;
+    for(ii const& delta : deltas){
+      int const r = p.first + delta.first, c = p.second + delta.second;
       // In part two the map is infinite:
       //if(not(0 <= r and r < R and 0 <= c and c < C)) continue;
-      int rr = r, cc = c;
-      rr = (rr%R+R)%R; //while(rr < 0) rr += R;
-      cc = (cc%C+C)%C; //while(cc < 0) cc += C;
-      if(G[rr][cc] != '#'){
+      int const rr = ((r % R) + R) % R; //while(rr < 0) rr += R;
+      int const cc = ((c % C) + C) % C; //while(cc < 0) cc += C;
+      if(G[rr][cc] != '#' and !nqed.contains({r, c})){
         nq.emplace(r, c);
-        seen.emplace(r, c);
+        nqed.emplace(r, c);
       }
     }
   }
@@ -136,11 +135,11 @@ ii get_start_position(grid const& G)
   return {};
 }
 
-std::pair<int, unsigned long long> solve(int num_steps)
+pair<int, unsigned long long> solve(int num_steps)
 {
   ii const start = get_start_position(G);
 
-  std::pair<int, unsigned long long> ans;
+  pair<int, unsigned long long> ans;
   {
     queue<ii> q;
     q.push(start);
@@ -148,24 +147,23 @@ std::pair<int, unsigned long long> solve(int num_steps)
     for(int i = 0; i < 64; i++){
       g = G;
       q = paint_grid(G,g,q);
+      //print(g);
     }
-    //print(g);
     ans.first = static_cast<int>(q.size());
   }
 
-  /*
   {
     queue<ii> q;
     q.push(start);
     grid g;
     for(int i = 0; i < num_steps; i++){
       q = make_new_positions(G,q);
+      cout << q.size() << endl;
     }
 
     ans.second = static_cast<int>(q.size());
   }
-  */
-  std::cout << "solve_part_two=" << solve_part_two(G, start, num_steps) << std::endl;
+  //cout << "solve_part_two=" << solve_part_two(G, start, num_steps) << endl;
 
   return ans;
 }
