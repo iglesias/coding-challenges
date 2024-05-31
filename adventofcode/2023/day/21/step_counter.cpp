@@ -1,15 +1,20 @@
-#include <cassert>
-#include <chrono>
+#define PYBIND11_DETAILED_ERROR_MESSAGES
+
+#include <cmath>
 #include <iostream>
 #include <queue>
 #include <set>
-#include <thread>
 #include <string>
+#include <thread>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include <boost/functional/hash.hpp>
+
+#include <pybind11/embed.h>
+#include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 
 #define   FOR(i, a, b)    for ( decltype(a) i = (a) ; i < (b) ; ++i )
 #define   REPEAT(i, n)    FOR(i, 0, n)
@@ -17,49 +22,47 @@
 using ii = std::pair<int, int>;
 
 void read_input();
-std::pair<int, unsigned long long> solve(int num_steps);
+std::pair<int32_t, int64_t> solve();
 
-using namespace std;
+using grid_t = std::vector<std::string>;
 
-using grid = vector<string>;
-
-grid G;
+// input
+grid_t G;
 int R, C;
 
-void print(grid const& g)
+void print(grid_t const& g)
 {
   static bool first_call = true;
   if (first_call) first_call = false;
-  else            cout << "\033[" << R << "A\033[" << C << "D";
-  REPEAT(r, R) cout << g[r] << "\n";
-  using namespace chrono_literals;
-  this_thread::sleep_for(200ms);
+  else            std::cout << "\033[" << R << "A\033[" << C << "D";
+  REPEAT(r, R) std::cout << g[r] << "\n";
+  using namespace std::chrono_literals;
+  std::this_thread::sleep_for(200ms);
 }
 
-int main(int argc, char* argv[])
+int main()
 {
   read_input();
-  int const num_steps = argc > 1 ? stoi(argv[1]) : 64;
-  pair const ans = solve(num_steps);
-  cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
+  const std::pair ans = solve();
+  std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
 }
 
 void read_input()
 {
-  string line;
-  while(getline(cin, line)){
+  std::string line;
+  while(getline(std::cin, line)){
     G.push_back(line);
     R++;
     C = int(line.size());
   }
 }
 
-vector<ii> const deltas{{0,1}, {0,-1}, {1,0} , {-1,0}};
+std::vector<ii> const deltas{{0,1}, {0,-1}, {1,0} , {-1,0}};
 
-queue<ii> paint_grid(grid const& G, grid& g, queue<ii>& q)
+std::queue<ii> paint_grid(grid_t const& G, grid_t& g, std::queue<ii>& q)
 {
-  queue<ii> nq;
-  set<ii> nqed;
+  std::queue<ii> nq;
+  std::set<ii> nqed;
   while(!q.empty()){
     auto p = q.front();
     q.pop();
@@ -77,10 +80,10 @@ queue<ii> paint_grid(grid const& G, grid& g, queue<ii>& q)
   return nq;
 }
 
-queue<ii> make_new_positions(grid const& G, queue<ii>& q)
+std::queue<ii> make_new_positions(grid_t const& G, std::queue<ii>& q)
 {
-  queue<ii> nq;
-  unordered_set<ii, boost::hash<ii>> nqed;
+  std::queue<ii> nq;
+  std::unordered_set<ii, boost::hash<ii>> nqed;
   while(!q.empty()){
     ii const p = q.front();
     q.pop();
@@ -99,51 +102,22 @@ queue<ii> make_new_positions(grid const& G, queue<ii>& q)
   return nq;
 }
 
-using num_steps_t = int;
-unsigned long long solve_part_two(grid const& G, ii const& start, num_steps_t const num_steps)
+ii get_start_position(grid_t const& G)
 {
-  queue<pair<ii, num_steps_t>> q;
-  q.emplace(start, 0);
-  unordered_set<pair<ii, num_steps_t>, boost::hash<pair<ii, num_steps_t>>> qed;
-  qed.emplace(start, 0);
-  unsigned long long ans = 0;
-  while(!q.empty()){
-    pair<ii, num_steps_t> const p = q.front();
-    q.pop();
-    if(p.second == num_steps) {
-      ans++;
-      continue;
-    }
-    for(auto const& delta : deltas){
-      ii const pos = make_pair(p.first.first + delta.first, p.first.second + delta.second);
-      if(qed.contains({pos, p.second + 1})) continue;
-      int const rr = ((pos.first % R) + R) % R;
-      int const cc = ((pos.second % C) + C) % C;
-      if(G[rr][cc] != '#'){
-        q.emplace(pos, p.second + 1);
-        qed.emplace(pos, p.second + 1);
-      }
-    }
-  }
-  return ans;
-}
-
-ii get_start_position(grid const& G)
-{
-  REPEAT(r, R) REPEAT(c, C) if(G[r][c] == 'S') return make_pair(r, c);
-  assert(false);
+  REPEAT(r, R) REPEAT(c, C) if(G[r][c] == 'S') return std::make_pair(r, c);
+  std::unreachable();
   return {};
 }
 
-pair<int, unsigned long long> solve(int num_steps)
+std::pair<int, int64_t> solve()
 {
   ii const start = get_start_position(G);
+  std::pair<int, int64_t> ans;
 
-  pair<int, unsigned long long> ans;
   {
-    queue<ii> q;
+    std::queue<ii> q;
     q.push(start);
-    grid g;
+    grid_t g;
     for(int i = 0; i < 64; i++){
       g = G;
       q = paint_grid(G,g,q);
@@ -153,17 +127,35 @@ pair<int, unsigned long long> solve(int num_steps)
   }
 
   {
-    queue<ii> q;
+    std::queue<ii> q;
     q.push(start);
-    grid g;
-    for(int i = 0; i < num_steps; i++){
+    grid_t g;
+    std::vector<int64_t> poly_ys;
+    for(int i = 0; i < 65 + R*2; i++){
+      if (i == 65 or i == 65 + R) {
+        poly_ys.push_back(q.size());
+      }
       q = make_new_positions(G,q);
-      cout << q.size() << endl;
     }
+    poly_ys.push_back(q.size());
 
-    ans.second = static_cast<int>(q.size());
+    namespace py = pybind11;
+    const py::scoped_interpreter guard{};
+    const py::object scipy_interpolate = py::module::import("scipy.interpolate");
+    const std::vector<int64_t> poly_xs{65, 65 + R, 65 + R*2};
+    const py::object poly =
+        scipy_interpolate.attr("lagrange")(py::array_t<int64_t>(poly_xs.size(), poly_xs.data()),
+                                           py::array_t<int64_t>(poly_ys.size(), poly_ys.data()));
+    //TODO does the call chain leak?
+    const py::buffer_info coef_buf = poly.attr("coef").cast<py::array_t<double>>().request();
+    std::vector<double> coef_vec(static_cast<double*>(coef_buf.ptr),
+                                 static_cast<double*>(coef_buf.ptr) + coef_buf.size);
+    std::ranges::reverse(coef_vec);
+    const py::object numpy_polynomial = py::module::import("numpy.polynomial");
+    ans.second = std::llround(numpy_polynomial.attr("Polynomial")
+        (py::array_t<double>(coef_vec.size(), coef_vec.data()))
+        (26501365).cast<double>());
   }
-  //cout << "solve_part_two=" << solve_part_two(G, start, num_steps) << endl;
 
   return ans;
 }
