@@ -1,21 +1,46 @@
-#include <bits/stdc++.h>
+#include <exception>
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <istream>
+//#include <map>
+#include <unordered_map>
+#include <string>
+#include <utility>
+#include <vector>
 
-void read_input();
+#include <benchmark/benchmark.h>
+
+void read_input(std::istream& input);
 void solve();
 
-int main()
+namespace {
+
+static void main(benchmark::State& state)
 {
-  read_input();
-  solve();
+  // Setup
+  for (auto _ : state) {
+    std::ifstream input("./parabolic_reflector_dish_input.txt");
+    read_input(input);
+    // SUB
+    solve();
+  }
 }
+
+}  // anonymous
+
+BENCHMARK(::main);
+BENCHMARK_MAIN();
 
 std::vector<std::string> m;
 int R, C;
 
-void read_input()
+void read_input(std::istream& input)
 {
+  R = C = 0;
+  m.clear();
   std::string line;
-  while(std::getline(std::cin, line))
+  while(std::getline(input, line))
   {
     m.push_back(line);
     R++;
@@ -24,24 +49,22 @@ void read_input()
 }
 
 long long cycle_number;
-std::pair<int, int> ans;
 
 void cycle();
 
-void try_wrap()
+int try_wrap(std::unordered_map<size_t, long long>& cache)
 {
-  static std::map<size_t, long long> cache;
   size_t h = std::hash<std::string>{}(m[0]);
   for(int r=1; r<R; r++) h ^= std::hash<std::string>{}(m[r]);
   if(!cache.contains(h))
   {
     cache.insert(std::make_pair(h, cycle_number));
-    return;
+    return -1;
   }
   for(int i = 0; i < (1000000000-cycle_number)%cache.at(h); i++) cycle();
-  for(int r=0;r<R;r++) for(int c=0;c<C;c++) if(m[r][c]=='O') ans.second += (R-r);
-  std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
-  std::exit(0);
+  int ans = 0;
+  for(int r=0;r<R;r++) for(int c=0;c<C;c++) if(m[r][c]=='O') ans += (R-r);
+  return ans;
 }
 
 void tilt_north()
@@ -102,6 +125,7 @@ void cycle()
 
 void solve()
 {
+  std::pair<int, int> ans{0, 0};
   tilt_north();
   for(int r=0;r<R;r++) for(int c=0;c<C;c++) if(m[r][c]=='O') ans.first += (R-r);
   tilt_west();
@@ -109,10 +133,13 @@ void solve()
   tilt_east();
   cycle_number = 1;
 
+  std::unordered_map<size_t, long long> cache;
   for(long long i=0; i<1000000000; i++)
   {
     cycle();
     cycle_number++;
-    try_wrap();
+    if ((ans.second = try_wrap(cache)) > 0) break;
   }
+  //std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
+  if (ans.first != 106997 or ans.second != 99641) throw std::exception();
 }
