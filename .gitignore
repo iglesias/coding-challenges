@@ -7,3 +7,6 @@ gcm.cache/
 __pycache__/
 nobuild/
 venv/
+build/
+logs/
+*.png
