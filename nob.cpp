@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdlib>
 #include <filesystem>
+#include <map>
 #include <memory>
 #include <queue>
 #include <string_view>
@@ -106,6 +107,20 @@ Pid build_gtest_file_async(std::string_view path)
 Pid run_gtest_file_async(std::string_view filename)
 {
     return cmd_run_async(MAKE_CMD(NOEXT(PATH(filename.data()))), NULL, NULL);
+}
+
+
+std::map<std::string_view, std::vector<std::unique_ptr<Cmd>>> specifics;
+
+void init_specifics()
+{
+    using CmdPtr = std::unique_ptr<Cmd>;
+    std::vector<CmdPtr> cmds;
+    cmds.push_back(make_cmd(std::array{"g++ -std=c++20 -fmodules-ts -x c++-system-header array"}));
+    cmds.push_back(make_cmd(std::array{"g++ -std=c++20 -fmodules-ts -x c++-system-header algorithm"}));
+    //TODO add last command that will be modified later, when the complete path is available,
+    // appending "-o NOEXT(path)" and "path"
+    specifics.emplace("3012.cpp", std::move(cmds));
 }
 
 void work_out_leetcode()
