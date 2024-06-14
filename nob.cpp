@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdlib>
 #include <filesystem>
+#include <memory>
 #include <queue>
 #include <string_view>
 #include <vector>
@@ -24,6 +25,24 @@
       std::free(reinterpret_cast<void*>(              \
           const_cast<char*>(cmd_to_show)));           \
       cmd;})                                          \
+
+
+template<size_t N> auto make_cmd(std::array<Cstr, N> strings) -> std::unique_ptr<Cmd>
+{
+    std::unique_ptr<Cmd> cmd_ptr = std::make_unique<Cmd>();
+    cmd_ptr->line.count = strings.size();
+    cmd_ptr->line.elems = strings.data();
+    return cmd_ptr;
+}
+
+template<size_t N> void make_and_run_cmd(std::array<Cstr, N> strings)
+{
+    const std::unique_ptr<const Cmd> cmd_ptr{make_cmd(strings)};
+    //TODO FIX leaks.
+    //FIXME stack-use-after-return?
+    INFO("make_and_run_cmd: %s", cmd_show(*cmd_ptr));
+    cmd_run_sync(*cmd_ptr);
+}
 
 
 namespace fs = std::filesystem;
@@ -57,17 +76,6 @@ void build_custom_cpp_files() {
       if (filename.ends_with(".cpp") or filename.ends_with("cc"))
         build_custom_cpp_file(filename);
     }
-}
-
-template<size_t N>
-void make_and_run_cmd(std::array<Cstr, N> strings)
-{
-    Cmd cmd;
-    cmd.line.count = strings.size();
-    cmd.line.elems = strings.data();
-    //TODO FIX leaks.
-    INFO("make_and_run_cmd: %s", cmd_show(cmd));
-    cmd_run_sync(cmd);
 }
 
 void build_cpp_file(std::string_view filename)
