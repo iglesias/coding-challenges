@@ -17,6 +17,10 @@ jobs:
         
       - name: Install dependencies
         run: sudo apt-get install libboost-all-dev libgtest-dev python3-dev python3-pybind11
+
+      - name: Ensure python points to python3
+        run: |
+          sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
         
       - name: Build & Test
         run: |
