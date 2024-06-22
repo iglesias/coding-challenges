@@ -13,10 +13,10 @@ jobs:
       - name: Python setup
         uses:  actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3'
         
       - name: Install dependencies
-        run: sudo apt-get install libboost-all-dev libgtest-dev python3.11-dev python3-pybind11
+        run: sudo apt-get install libboost-all-dev libgtest-dev libpython3-dev python3-pybind11
         
       - name: Build & Test
         run: |
