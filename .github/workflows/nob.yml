@@ -20,6 +20,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install libboost-all-dev libgtest-dev
           sudo apt-get install python3.11-dev libpython3.11-dev python3-pybind11
+          python -m pip install --upgrade pip
+
+      - name: Ensure python points to python3
+        run: |
+          sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
         
       - name: Build & Test
         run: |
