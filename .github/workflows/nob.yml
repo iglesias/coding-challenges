@@ -19,7 +19,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libboost-all-dev libgtest-dev
-          sudo apt-get install python3.11-dev libpython3.11-dev python3-pybind11 python3.11-pybind11
+          sudo apt-get install python3.11-dev libpython3.11-dev python3-pybind11
         
       - name: Build & Test
         run: |
