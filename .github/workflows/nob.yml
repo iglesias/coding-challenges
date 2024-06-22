@@ -9,22 +9,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+        
       - name: Python setup
         uses:  actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3'
         
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install libboost-all-dev libgtest-dev
-          sudo apt-get install python3.11-dev libpython3.11-dev python3-pybind11
+          sudo apt-get install python3-pybind11 python3-dev
           python -m pip install --upgrade pip
 
-      - name: Ensure python points to python3
-        run: |
-          sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
         
       - name: Build & Test
         run: |
