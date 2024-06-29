@@ -67,8 +67,10 @@ void solve()
 
       if(not((r.second.x-positions.at(i).x)/velocities.at(i).x < 0 or 
              (r.second.y-positions.at(j).y)/velocities.at(j).y < 0))
-        if(not(r.second.x < limits.first or r.second.x > limits.second or
-               r.second.y < limits.first or r.second.y > limits.second))
+        if(not(static_cast<long long>(std::floor(r.second.x)) < limits.first
+               or static_cast<long long>(std::ceil(r.second.x)) > limits.second
+               or static_cast<long long>(std::floor(r.second.y)) < limits.first
+               or static_cast<long long>(std::ceil(r.second.y)) > limits.second))
           ans.first++;
     }
 }

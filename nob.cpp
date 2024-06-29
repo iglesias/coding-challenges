@@ -171,15 +171,16 @@ int main(int argc, char* argv[])
 {
     GO_REBUILD_URSELF(argc, argv);
 
-    build_kattis_c_files();
+  //build_kattis_c_files();
   //build_custom_cpp_files();
   //build_directory_cpp_files("adventofcode");
   //build_codeforces_cpp_files();
-    work_out_leetcode();
-    build_and_run_gtest_file("uva/summing_digits.cpp");
+  //work_out_leetcode();
+  //build_and_run_gtest_file("uva/summing_digits.cpp");
 #if GCC_VERSION > 120000
     build_cpp_file("adventofcode/2023/day/01/trebuchet.cpp");
 #endif
     build_cpp_file("adventofcode/2023/day/02/cube_conundrum.cpp");
     build_cpp_file("adventofcode/2022/day/25/snafu.cpp");
+    build_cpp_file("adventofcode/2023/day/21/step_counter.cpp");
 }
