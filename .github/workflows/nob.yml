@@ -9,8 +9,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install GoogleTest
-        run: sudo apt-get install libgtest-dev
+        
+      - name: Python setup
+        uses:  actions/setup-python@v5
+        with:
+          python-version: '3'
+        
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libboost-all-dev libgtest-dev
+
       - name: Build & Test
         run: |
           g++ -std=c++20 -o nob nob.cpp

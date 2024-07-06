@@ -3,10 +3,8 @@ name: Duplicate code
 on: pull_request
 
 jobs:
-  duplicate-code-check:
-    name: Check for duplicate code
-    run_if:
-      if: startsWith(github.head_ref, 'adventofcode')
+  run_if:
+    if: startsWith(github.head_ref, 'adventofcode')
     runs-on: ubuntu-latest
     steps:
       - name: Check for duplicate code
