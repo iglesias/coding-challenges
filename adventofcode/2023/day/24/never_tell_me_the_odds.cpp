@@ -1,16 +1,21 @@
-#include <bits/stdc++.h>
+#include <cmath>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
-void read_input();
-std::pair<int, int> ans;
-void solve();
+struct Point;
+
+std::pair<std::vector<Point>, std::vector<Point>> read_input();
+int solve_part_one(std::vector<Point>, std::vector<Point>);
 
 std::pair<long long, long long> const limits{200000000000000, 400000000000000};
 
 int main()
 {
-  read_input();
-  solve();
-  std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
+  const auto [positions, velocities] = read_input();
+  std::cout << "Part one: " << solve_part_one(positions, velocities) << '\n';
 }
 
 struct Point {
@@ -24,11 +29,11 @@ struct Point {
   double cross(Point a, Point b) const { return (a-*this).cross(b-*this); }
 };
 
-std::vector<Point> positions;
-std::vector<Point> velocities;
 
-void read_input()
+auto read_input() -> std::pair<std::vector<Point>, std::vector<Point>>
 {
+  std::vector<Point> positions;
+  std::vector<Point> velocities;
   std::string line;
   while(std::getline(std::cin, line))
   {
@@ -45,6 +50,7 @@ void read_input()
     ss2 >> vx >> comma >> vy >> comma >> vz;
     velocities.emplace_back(vx, vy);
   }
+  return {positions, velocities};
 }
 
 std::pair<int, Point> find_intersection(std::pair<Point, Point> lhs, std::pair<Point, Point> rhs)
@@ -55,9 +61,10 @@ std::pair<int, Point> find_intersection(std::pair<Point, Point> lhs, std::pair<P
   return {1, (lhs.first * p + lhs.second * q) / d};
 }
 
-void solve()
+int solve_part_one(const std::vector<Point> positions, const std::vector<Point> velocities)
 {
   int const n = static_cast<int>(positions.size());
+  int ans = 0;
   for(int i = 0; i < n; i++)
     for(int j = i+1; j < n; j++){
       auto const r = find_intersection({positions.at(i), positions.at(i)+velocities.at(i)*1e9},
@@ -71,6 +78,7 @@ void solve()
                or static_cast<long long>(std::ceil(r.second.x)) > limits.second
                or static_cast<long long>(std::floor(r.second.y)) < limits.first
                or static_cast<long long>(std::ceil(r.second.y)) > limits.second))
-          ans.first++;
+          ans++;
     }
+  return ans;
 }
