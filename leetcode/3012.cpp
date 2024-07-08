@@ -11,7 +11,7 @@ template<typename Range> constexpr int solve(const Range& nums){
   for(const auto num : nums) if((num % min) != 0) return 1;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshift-op-parentheses"
-  return min_count + 1 >> 1;
+  return (static_cast<int>(min_count) + 1) >> 1;
 #pragma clang diagnostic pop
 }
 

@@ -11,9 +11,9 @@ bool is_palindrome(const string& s, int start, int end) {
     return true;
 }
 
-void solve(const string& s, vector<vector<string>>& ans, vector<int>& v, int v_index = 0) {
+void solve(const string& s, vector<vector<string>>& ans, vector<int>& v, size_t v_index = 0) {
     if (!v.size()) {
-        if (is_palindrome(s, 0, s.length() - 1)) ans.push_back(vector<string>{s});
+        if (is_palindrome(s, 0, static_cast<int>(s.length()) - 1)) ans.push_back(vector<string>{s});
     } else {
         bool not_palindrome_found = false;
         int start = 0;
@@ -23,12 +23,12 @@ void solve(const string& s, vector<vector<string>>& ans, vector<int>& v, int v_i
             candidate.push_back(s.substr(start, v[i] - start + 1));
             start = v[i] + 1;
         }
-        not_palindrome_found |= !is_palindrome(s, start, s.length() - 1);
+        not_palindrome_found |= !is_palindrome(s, start, static_cast<int>(s.length()) - 1);
         candidate.push_back(s.substr(start));
         if (!not_palindrome_found) ans.push_back(candidate);
     }
     for (size_t j = v_index; j < s.length() - 1; j++) {
-        v.push_back(j);
+        v.push_back(static_cast<int>(j));
         solve(s, ans, v, j + 1);
         v.pop_back();
     }
@@ -36,6 +36,7 @@ void solve(const string& s, vector<vector<string>>& ans, vector<int>& v, int v_i
 
 vector<vector<string>> partition(const string& s) {
     vector<vector<string>> ans;
+    if (!s.length()) return ans;
     vector<int> v;
     solve(s, ans, v);
     return ans;

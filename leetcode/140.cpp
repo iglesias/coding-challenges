@@ -42,7 +42,7 @@ vector<string> wordbreak(const string& s, const vector<string>& wordDict) {
 TEST(BreakIntoWords, Example_1)
 {
     EXPECT_EQ(wordbreak("catsanddog", vector<string>{"cat", "cats", "and", "sand", "dog"}),
-              vector<string>{"cat sand dog", "cats and dog"});
+              (vector<string>{"cat sand dog", "cats and dog"}));
 }
 
 int main(int argc, char **argv)

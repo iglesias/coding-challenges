@@ -10,8 +10,8 @@ public:
             for (size_t i = 0; i < nums.size() && !stop; i += 2) if ( nums[i]) stop = true;
             for (size_t i = 1; i < nums.size() && !stop; i += 2) if (!nums[i]) stop = true;
             if (!stop && !(nums.size() % 2)) {
-                if (k == nums.size()) return -1;
-                if (!(nums.size() % k)) return nums.size() / 2;
+                if (k == static_cast<int>(nums.size())) return -1;
+                if (!(nums.size() % k)) return static_cast<int>(nums.size()) / 2;
                 return -1;
             }
         }
@@ -35,7 +35,7 @@ public:
         while (i < nums.size()) {
             while (i < nums.size() - k and nums[i]) i++;
             if (i >= nums.size() - k) {
-                const int backup = i;
+                const size_t backup = i;
                 if (!nums[i]) { while (i < nums.size()) if ( nums[i++]) return -1; }
                 else          { while (i < nums.size()) if (!nums[i++]) return -1; }
                 return ans + !nums[backup];
