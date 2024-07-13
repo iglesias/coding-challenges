@@ -1,4 +1,4 @@
-// g++ trebuchet.cpp -std=c++23 -fsanitize=address,pointer-overflow,signed-integer-overflow,undefined -Wall -Wextra -pedantic -O3
+// g++ trebuchet.cpp -std=c++23 -fsanitize=address,pointer-overflow,signed-integer-overflow,undefined -Wall -Wextra -pedantic -ggdb
 
 #include <algorithm>
 #include <array>
@@ -142,6 +142,18 @@ constexpr std::pair<int, int> find_first_and_last_digits(std::string_view in) {
   return std::make_pair(find_first(in), find_first(in, true));
 }
 
+std::pair<int, int> find_first_and_last_digits_re(const std::string& line) {
+  std::smatch matches;
+  std::cout << ">> " << line << std::endl;
+  //assert(std::regex_search(line, matches, std::regex("(\\d)+")));
+  assert(std::regex_search(line, matches, std::regex("(?<!\\d)\\d(?!\\d).*?(?<!\\d)\\d(?!\\d)")));
+  std::pair<int, int> a_re{0, 0};
+  std::cout << ">> " << matches.size() << ' ' << matches[0].str() << ' ' << matches[1].str() << ' ' << matches[4].str() << std::endl;
+  a_re.first = std::stoi(matches[1].str());
+  a_re.second = std::stoi(matches[2].str());
+  return a_re;
+}
+
 int main() {
   std::string line;
   int ans_a{0}, ans_b{0}, ans_a_re{0};
@@ -150,21 +162,15 @@ int main() {
     if (line.empty())
       break;
 
-    auto a{find_first_and_last_digits(line)};
-    auto b{find_first_and_last_digits(transform(line))};
+    const auto a{find_first_and_last_digits(line)};
+    const auto b{find_first_and_last_digits(transform(line))};
 
     ans_a += a.first * 10 + a.second;
     ans_b += b.first * 10 + b.second;
 
-    std::smatch matches;
-    std::cout << ">> " << line << std::endl;
-    //assert(std::regex_search(line, matches, std::regex("(\\d)+")));
-    assert(std::regex_search(line, matches, std::regex("(?<!\\d)\\d(?!\\d).*?(?<!\\d)\\d(?!\\d)")));
-    std::pair<int, int> a_re{0, 0};
-    std::cout << ">> " << matches.size() << ' ' << matches[0].str() << ' ' << matches[1].str() << ' ' << matches[4].str() << std::endl;
-    a_re.first = std::stoi(matches[1].str());
-    a_re.second = std::stoi(matches[2].str());
-    ans_a_re += a_re.first*10 + a_re.second;
+    //const auto c{find_first_and_last_digits_re(line)};
+
+    //ans_a_re += c.first * 10 + c.second;
   }
 
   std::cout << "Part one: " << ans_a << ' ' << ans_a_re << '\n';
