@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
   run_if:
-    if: startsWith(github.head_ref, 'adventofcode')
+    if: startsWith(github.head_ref, 'deactivated')
     runs-on: ubuntu-latest
     steps:
       - name: Check for duplicate code
