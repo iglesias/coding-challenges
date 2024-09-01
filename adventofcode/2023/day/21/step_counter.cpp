@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <iterator>
 #include <queue>
 #include <set>
 #include <string>
@@ -43,7 +44,7 @@ void print(grid_t const& g)
 int main()
 {
   read_input();
-  const std::pair ans = solve();
+  std::pair const ans = solve();
   std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
 }
 
@@ -109,6 +110,25 @@ ii get_start_position(grid_t const& G)
   return {};
 }
 
+int64_t fit_polynomial_and_extrapolate(std::vector<int64_t> const& x, std::vector<int64_t> const& y)
+{
+  namespace py = pybind11;
+  py::scoped_interpreter const guard{};
+  py::object const scipy_interpolate = py::module::import("scipy.interpolate");
+  py::object const poly =
+      scipy_interpolate.attr("lagrange")(py::array_t<int64_t>(x.size(), x.data()),
+                                         py::array_t<int64_t>(y.size(), y.data()));
+  //TODO does the call chain leak?
+  py::buffer_info const coef_buf = poly.attr("coef").cast<py::array_t<double>>().request();
+  std::vector<double> coef_vec(static_cast<double*>(coef_buf.ptr),
+                               static_cast<double*>(coef_buf.ptr) + coef_buf.size);
+  std::ranges::reverse(coef_vec);
+  py::object const numpy_polynomial = py::module::import("numpy.polynomial");
+  return std::llround(numpy_polynomial.attr("Polynomial")
+                      (py::array_t<double>(coef_vec.size(), coef_vec.data()))
+                      (26501365).cast<double>());
+}
+
 std::pair<int, int64_t> solve()
 {
   ii const start = get_start_position(G);
@@ -127,34 +147,21 @@ std::pair<int, int64_t> solve()
   }
 
   {
-    std::queue<ii> q;
-    q.push(start);
-    grid_t g;
+    std::vector<int64_t> const poly_xs{65, 65 + R, 65 + R*2};
     std::vector<int64_t> poly_ys;
-    for(int i = 0; i < 65 + R*2; i++){
-      if (i == 65 or i == 65 + R) {
-        poly_ys.push_back(q.size());
+    {
+      std::queue<ii> q;
+      q.push(start);
+      grid_t g;
+      for (int i = 0; i < *std::rbegin(poly_xs); i++) {
+        if (i == poly_xs.at(0) or i == poly_xs.at(1))
+          poly_ys.push_back(q.size());
+        q = make_new_positions(G,q);
       }
-      q = make_new_positions(G,q);
+      poly_ys.push_back(q.size());
     }
-    poly_ys.push_back(q.size());
 
-    namespace py = pybind11;
-    const py::scoped_interpreter guard{};
-    const py::object scipy_interpolate = py::module::import("scipy.interpolate");
-    const std::vector<int64_t> poly_xs{65, 65 + R, 65 + R*2};
-    const py::object poly =
-        scipy_interpolate.attr("lagrange")(py::array_t<int64_t>(poly_xs.size(), poly_xs.data()),
-                                           py::array_t<int64_t>(poly_ys.size(), poly_ys.data()));
-    //TODO does the call chain leak?
-    const py::buffer_info coef_buf = poly.attr("coef").cast<py::array_t<double>>().request();
-    std::vector<double> coef_vec(static_cast<double*>(coef_buf.ptr),
-                                 static_cast<double*>(coef_buf.ptr) + coef_buf.size);
-    std::ranges::reverse(coef_vec);
-    const py::object numpy_polynomial = py::module::import("numpy.polynomial");
-    ans.second = std::llround(numpy_polynomial.attr("Polynomial")
-        (py::array_t<double>(coef_vec.size(), coef_vec.data()))
-        (26501365).cast<double>());
+    ans.second = fit_polynomial_and_extrapolate(poly_xs, poly_ys);
   }
 
   return ans;

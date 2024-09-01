@@ -178,9 +178,10 @@ int main(int argc, char* argv[])
   //build_codeforces_cpp_files();
     work_out_leetcode();
     build_and_run_gtest_file("uva/summing_digits.cpp");
+    build_cpp_file("adventofcode/2022/day/25/snafu.cpp");
 #if GCC_VERSION > 120000
     build_cpp_file("adventofcode/2023/day/01/trebuchet.cpp");
 #endif
     build_cpp_file("adventofcode/2023/day/02/cube_conundrum.cpp");
-    build_cpp_file("adventofcode/2022/day/25/snafu.cpp");
+    build_cpp_file("adventofcode/2023/day/21/step_counter.cpp");
 }
