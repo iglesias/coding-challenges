@@ -190,5 +190,5 @@ int64_t solve(int num_button_presses, bool part_one){
   std::adjacent_difference(ALL(high_pulses_mz), high_pulses_mz.begin());
   std::adjacent_difference(ALL(high_pulses_lz), high_pulses_lz.begin());
   std::adjacent_difference(ALL(high_pulses_zm), high_pulses_zm.begin());
-  return high_pulses_pl[1]*high_pulses_mz[1]*high_pulses_lz[1]*high_pulses_zm[1];
+  return high_pulses_pl.at(1) * high_pulses_mz.at(1) * high_pulses_lz.at(1) * high_pulses_zm.at(1);
 }
