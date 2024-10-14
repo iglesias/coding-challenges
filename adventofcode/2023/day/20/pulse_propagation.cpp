@@ -1,5 +1,3 @@
-// {{{ Boilerplate Code <---------------------------------------------------------------------------
-
 #include <algorithm>
 #include <iostream>
 #include <cstdint>
@@ -11,15 +9,13 @@
 #include <variant>
 #include <vector>
 
-#define   ALL(a)          (a).begin(), (a).end()
+#define ALL(a) (a).begin(), (a).end()
 
-auto split(std::string const& str, std::string const& sep) -> std::vector<std::string>
-{
+std::vector<std::string> split(std::string const& str, std::string const& sep){
   std::string::size_type pos{0}, n;
   std::vector<std::string> out;
 
-  while((n = str.find(sep, pos)) != std::string::npos)
-  {
+  while((n = str.find(sep, pos)) != std::string::npos){
     out.push_back(str.substr(pos, n-pos));
     pos = n + std::size(sep);
   }
@@ -29,11 +25,8 @@ auto split(std::string const& str, std::string const& sep) -> std::vector<std::s
   return out;
 }
 
-// -------------------------------------------------------------------------> End of Boilerplate }}}
-
 //prefix %
-struct flip_flop
-{
+struct flip_flop{
   bool on;
   std::vector<std::string> outputs;
   std::string name;
@@ -49,8 +42,7 @@ enum class Pulse { LOW, HIGH };
 auto to_string(Pulse pulse){ if(pulse == Pulse::LOW) return "LOW"; return "HIGH"; };
 
 //prefix &
-struct conjunction //remember pulse of inputs
-{
+struct conjunction{  //remember pulse of inputs
   std::unordered_map<std::string, Pulse> input_pulses;
   std::vector<std::string> outputs;
   std::string name;
@@ -70,15 +62,13 @@ void read_input();
 int solve_part_one();
 int64_t solve_part_two(int num_button_presses);
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]){
   const int num_button_presses = argc > 1 ? std::stoi(argv[1]) : 10000;
   read_input();
   std::cout << "Part one: " << solve_part_one() << ".\nPart two: " << solve_part_two(num_button_presses) << ".\n";
 }
 
-void read_input()
-{
+void read_input(){
   auto get_vectors_from_first_split = [](std::string const& line){
     auto const vs0 = split(line, std::string(" -> "));
     auto vs1 = vs0.at(1).find(',') == std::string::npos ? std::vector{vs0.at(1)} : split(vs0.at(1), std::string(","));
@@ -130,8 +120,7 @@ void process(queue& q,      module& m, Pulse pulse, std::string const& from);
 void process(queue& q, conjunction& c, Pulse pulse, std::string const& from);
 void process(queue& q,   flip_flop& f, Pulse pulse);
 
-void process(queue& q, conjunction& c, Pulse pulse, std::string const& from)
-{
+void process(queue& q, conjunction& c, Pulse pulse, std::string const& from){
   c.input_pulses.at(from) = pulse;
   bool low_found = false;
   for(auto const& kv : c.input_pulses)
@@ -141,8 +130,7 @@ void process(queue& q, conjunction& c, Pulse pulse, std::string const& from)
     q.emplace(output, pulse_to_send, c.name);
 }
 
-void process(queue& q,  flip_flop& f, Pulse pulse)
-{
+void process(queue& q,  flip_flop& f, Pulse pulse){
   if(pulse == Pulse::HIGH) return;
 
   Pulse pulse_to_send = f.on ? Pulse::LOW : Pulse::HIGH;
@@ -152,8 +140,7 @@ void process(queue& q,  flip_flop& f, Pulse pulse)
 }
 
 template<class> inline constexpr bool always_false_v = false;
-void process(queue& q, module& m, Pulse pulse, std::string const& from)
-{
+void process(queue& q, module& m, Pulse pulse, std::string const& from){
   std::visit([&q, &pulse, &from, &m](auto&& arg)
   {
     using T = std::decay_t<decltype(arg)>;
@@ -164,12 +151,20 @@ void process(queue& q, module& m, Pulse pulse, std::string const& from)
   }, m);
 }
 
-int64_t solve(int num_button_presses, bool part_one)
-{
+int64_t solve(int num_button_presses, bool part_one);
+
+int solve_part_one(){
+  return static_cast<int>(solve(1000, true));
+}
+
+int64_t solve_part_two(int num_button_presses){
+  return solve(num_button_presses, false);
+}
+
+int64_t solve(int num_button_presses, bool part_one){
   //aptly button module: it sends a low pulse to the broadcaster module.
   queue q;
-  int num_low_pulses = num_button_presses, num_high_pulses = 0;
-  int ans = 0;
+  int64_t num_low_pulses = num_button_presses, num_high_pulses = 0;
   std::vector<int64_t> high_pulses_pl, high_pulses_mz, high_pulses_lz, high_pulses_zm;
   for(int n = 0; n < num_button_presses; n++){
     for(std::string const& m : broadcaster) q.emplace(m, Pulse::LOW, "broadcaster");
@@ -189,20 +184,11 @@ int64_t solve(int num_button_presses, bool part_one)
       if(!output_modules.contains(m)) process(q, modules.at(m), pulse, from);
       q.pop();
     }
-    if(n == num_button_presses-1) ans = num_low_pulses*num_high_pulses;
+    if(n == num_button_presses-1 && part_one) return num_low_pulses * num_high_pulses;
   }
-  if(part_one) return ans;
   std::adjacent_difference(ALL(high_pulses_pl), high_pulses_pl.begin());
   std::adjacent_difference(ALL(high_pulses_mz), high_pulses_mz.begin());
   std::adjacent_difference(ALL(high_pulses_lz), high_pulses_lz.begin());
   std::adjacent_difference(ALL(high_pulses_zm), high_pulses_zm.begin());
-  return high_pulses_pl[1]*high_pulses_mz[1]*high_pulses_lz[1]*high_pulses_zm[1];
-}
-
-int solve_part_one(){
-  return solve(1000, true);
-}
-
-int64_t solve_part_two(int num_button_presses){
-  return solve(num_button_presses, false);
+  return high_pulses_pl.at(1) * high_pulses_mz.at(1) * high_pulses_lz.at(1) * high_pulses_zm.at(1);
 }
