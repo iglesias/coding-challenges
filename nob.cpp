@@ -182,5 +182,7 @@ int main(int argc, char* argv[])
     build_cpp_file("adventofcode/2023/day/01/trebuchet.cpp");
 #endif
     build_cpp_file("adventofcode/2023/day/02/cube_conundrum.cpp");
+    build_cpp_file("adventofcode/2023/day/20/pulse_propagation.cpp");
     build_cpp_file("adventofcode/2022/day/25/snafu.cpp");
+    build_cpp_file("adventofcode/2024/day/01/historian_hysteria.cpp");
 }

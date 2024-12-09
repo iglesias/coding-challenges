@@ -1,8 +1,8 @@
 name: nanobind
 run-name: ${{ github.actor }} is building Python extensions with nanobind
 on:
-  push:
-  workflow_dispatch:
+#  push:
+#  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,11 +22,11 @@ jobs:
       - name: Python setup
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11.9'
+          python-version: '3.12'
       - name: Install Python development dependency
         run: |
           sudo apt-get update
-          sudo apt-get install python3.11-dev
+          sudo apt-get install python3.12-dev
           python -m pip install --upgrade pip
           pip install robotframework
           # pip install -r requirements.txt
@@ -34,6 +34,6 @@ jobs:
         run: ./build_nb.sh
       - name: Test
         working-directory: ${{github.workspace}}
-        run: python3.11 nob.py
+        run: python3.12 nob.py
       - name: Robot
         run: PYTHONPATH=.:robot robot -d logs robot/NobTestSuite.robot
