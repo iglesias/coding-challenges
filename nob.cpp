@@ -80,7 +80,9 @@ void build_and_run_gtest_file(std::string_view filename)
 {
     Cstr path = PATH(filename.data());
     CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest");
+#ifndef BUILD_ONLY // github.com/iglesias/coding-challenges/actions/runs/12532941559/job/34952138092#step:4:943
     CMD(NOEXT(path));
+#endif
 }
 
 Pid build_gtest_file_async(std::string_view path)
@@ -113,6 +115,7 @@ void work_out_leetcode()
 
     for (const Pid& pid : pids) pid_wait(pid);
 
+#ifndef BUILD_ONLY  // github.com/iglesias/coding-challenges/actions/runs/12532941559/job/34952138092#step:4:943
     pids.clear();
 
     for (const auto& entry : fs::directory_iterator("leetcode")) if (fs::is_regular_file(entry.path())) {
@@ -121,6 +124,7 @@ void work_out_leetcode()
         if (filename.ends_with(".cpp")) pids.push_back(run_gtest_file_async("leetcode/" + filename)); }
 
     for (const Pid& pid : pids) pid_wait(pid);
+#endif
 }
 
 void build_codeforces_cpp_files() {
