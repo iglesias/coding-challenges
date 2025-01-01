@@ -64,12 +64,12 @@ jobs:
         mkdir -p logs
         echo "#$(date)" > logs/codeql-analysis.log
         echo "===============================================" >> logs/codeql-analysis.log
-        echo "${{ toJSON(steps.analyze.outputs) }}" >> logs/codeql-analysis.log
+        echo "${{ toJSON(steps.analyze.outputs) }}" >> logs/codeql-${{ matrix.language }}-analysis.log
 
     - name: Upload Analysis Logs
       uses: actions/upload-artifact@v4
       with:
         name: codeql-analysis-logs
-        path: logs/codeql-analysis.log
+        path: logs/codeql-c-cpp-analysis.log
         retention-days: 90
         if-no-files-found: warn
