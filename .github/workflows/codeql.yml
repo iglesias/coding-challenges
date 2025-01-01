@@ -2,7 +2,7 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "iglesias-patch-1" ]
   pull_request:
     branches: [ "main" ]
 
@@ -56,3 +56,20 @@ jobs:
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
+      continue-on-error: true
+      id: analyze
+
+    - name: Gtgt Analysis Logs
+      run: |
+        mkdir -p logs
+        echo "#$(date)" > logs/codeql-analysis.log
+        echo "===============================================" >> logs/codeql-analysis.log
+        echo "${{ toJSON(steps.analyze.outputs) }}" >> logs/codeql-analysis.log
+
+    - name: Upload Analysis Logs
+      uses: actions/upload-artifact@v4
+      with:
+        name: codeql-analysis-logs
+        path: logs/codeql-analysis.log
+        retention-days: 90
+        if-no-files-found: warn
