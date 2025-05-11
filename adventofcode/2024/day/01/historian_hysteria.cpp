@@ -1,3 +1,6 @@
+// clang++ -std=c++23 -O3 -ftime-trace historian_hysteria.cpp
+// open output json in Chromium's chrome://tracing
+
 #include <algorithm>
 #include <cstdio>
 #include <unordered_map>
