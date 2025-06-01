@@ -76,7 +76,7 @@ constexpr auto fraction_addition(std::string expression) -> std::string {
 
 TEST(FractionAddition, a) { EXPECT_EQ(fraction_addition("-1/2+1/2"),     "0/1"); }
 TEST(FractionAddition, b) { EXPECT_EQ(fraction_addition("-1/2+1/2+1/3"), "1/3"); }
-TEST(FractionAddition, c) { EXPECT_EQ(fraction_addition(" 1/3-1/2"),    "-1/6"); }
+TEST(FractionAddition, c) { EXPECT_EQ(fraction_addition("1/3-1/2"),      "-1/6"); }
 
 TEST(FractionAddition, d__expression_with_a_10) { EXPECT_EQ(fraction_addition("-5/2+10/3+7/9"), "29/18"); }
 
