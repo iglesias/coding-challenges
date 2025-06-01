@@ -22,7 +22,10 @@ int main()
     sum = 0;
     REP(i, n)
     {
-      scanf("%d", &s);
+      if (scanf("%d", &s) != 1) {
+        fprintf(stderr, "Error reading input for s\n");
+        return 1;
+      }
       sum += s + divisor;
       sum %= divisor;
 
