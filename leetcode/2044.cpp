@@ -11,13 +11,13 @@ solve(std::vector<int> const& nums, int& curMax, std::unordered_map<int ,int>& f
         freqs[curOr]++;
         curMax = max(curMax, curOr);
         if (i == nums.size()) return curMax;
-        for (vector<int>::size_type j = i; j < nums.size(); j++)
+        for (std::vector<int>::size_type j = i; j < nums.size(); j++)
             curMax = max(curMax, solve(nums, curMax, freqs, curOr | nums[j], j + 1));
         return curMax;
 }
 
 int
-countMaxOrSubsets(vector<int>& nums)
+countMaxOrSubsets(std::vector<int>& nums)
 {
     std::unordered_map<int, int> freqs;
     int curMax = 0;
