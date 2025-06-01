@@ -1,8 +1,6 @@
 name: nanobind
 run-name: ${{ github.actor }} is building Python extensions with nanobind
-on:
-#  push:
-#  workflow_dispatch:
+on: pull_request
 jobs:
   build:
     runs-on: ubuntu-latest
