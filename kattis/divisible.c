@@ -5,7 +5,7 @@
 #define   REP(i, n)       FOR(i, 0, n)
 
 int S[1000000];
-int d;
+int divisor;
 
 int main()
 {
@@ -14,17 +14,17 @@ int main()
   scanf("%d\n", &T);
   REP(t, T)
   {
-    scanf("%d %d\n", &d, &n);
+    scanf("%d %d\n", &divisor, &n);
 
-    memset(S, '\0', sizeof(int)*d);
+    memset(S, '\0', sizeof(int)*divisor);
 
     ans = 0;
     sum = 0;
     REP(i, n)
     {
       scanf("%d", &s);
-      sum += s + d;
-      sum %= d;
+      sum += s + divisor;
+      sum %= divisor;
 
       ans += !(sum);
       ans += S[sum];
