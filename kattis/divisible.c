@@ -14,7 +14,10 @@ int main()
   scanf("%d\n", &T);
   REP(t, T)
   {
-    scanf("%d %d\n", &divisor, &n);
+    if (scanf("%d %d\n", &divisor, &n) != 2) {
+      fprintf(stderr, "Error reading input for divisor and/or n\n");
+      return 1;
+    }
 
     memset(S, '\0', sizeof(int)*divisor);
 
