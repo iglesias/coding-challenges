@@ -38,13 +38,11 @@ template<size_t N> auto make_cmd(std::array<Cstr, N> strings) -> std::unique_ptr
 
 template<size_t N> void make_and_run_cmd(std::array<Cstr, N> strings)
 {
-    const std::unique_ptr<const Cmd> cmd_ptr{make_cmd(strings)};
-    //TODO FIX leaks.
-    //FIXME stack-use-after-return?
-    INFO("make_and_run_cmd: %s", cmd_show(*cmd_ptr));
-    cmd_run_sync(*cmd_ptr);
+    //TODO Fix leaks.
+    Cmd cmd {.line = {.elems = strings.data(), .count = strings.size()}};
+    INFO("make_and_run_cmd: %s", cmd_show(cmd));
+    cmd_run_sync(cmd);
 }
-
 
 namespace fs = std::filesystem;
 
@@ -81,6 +79,7 @@ void build_custom_cpp_files() {
 
 void build_cpp_file(std::string_view filename)
 {
+    //TODO FIX leaks from PATH.
     Cstr path = PATH(filename.data());
     make_and_run_cmd(std::array{"g++", CPPFLAGS, "-o", NOEXT(path), path});
 }
