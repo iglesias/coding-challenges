@@ -24,7 +24,7 @@ int main() {
         cin >> Lq >> Rq;
         const long int i = distance(X, lower_bound(X, X + N, Lq)) - 1;
         long int j = distance(X, lower_bound(X, X + N, Rq));
-        if ((j == N) or (j < N and X[j] > Rq)) j--;
+        if ((j != 0) and ((j == N) or (j < N and X[j] > Rq))) j--;
         cout << Pcumulative[j] - (i >= 0 ? Pcumulative[i] : 0) << '\n';
     }
 }
