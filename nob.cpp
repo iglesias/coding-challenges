@@ -10,7 +10,7 @@
 #include <vector>
 
 #define CFLAGS    "-std=c2x",   "-Wall", "-Wextra", "-pedantic"
-#define CPPFLAGS  "-std=c++23", "-Wall", "-Wconversion", "-Wextra", "-pedantic", "-fsanitize=address,undefined", "-fsanitize-address-use-after-scope"
+#define CPPFLAGS  "-std=c++23", "-Wall", "-Wconversion", "-Wextra", "-pedantic", "-fsanitize=address,undefined", "-fsanitize-address-use-after-scope", "-D_GLIBCXX_DEBUG"
 
 #define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 
