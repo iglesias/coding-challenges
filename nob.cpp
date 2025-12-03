@@ -14,7 +14,7 @@
 #define CFLAGS    "-std=c2x",   "-Wall", "-Wextra", "-pedantic"
 #define CPPFLAGS  "-std=c++23"sv, \
                   "-Wall"sv, "-Wconversion"sv, "-Wextra"sv, "-pedantic"sv, \
-                  "-fsanitize=address,pointer-overflow,signed-integer-overflow,undefined"sv \
+                  "-fsanitize=address,pointer-overflow,signed-integer-overflow,undefined"sv, \
                   "-fsanitize-address-use-after-scope"sv, "-D_GLIBCXX_DEBUG"sv
 
 #define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
