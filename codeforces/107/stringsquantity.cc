@@ -1,40 +1,14 @@
-// {{{ Boilerplate Code <--------------------------------------------------
-
-#include <algorithm>
-#include <bitset>
-#include <cmath>
 #include <cstdio>
-#include <cstdlib>
-#include <ctime>
-#include <deque>
-#include <functional>
-#include <iomanip>
 #include <iostream>
-#include <list>
-#include <map>
-#include <numeric>
-#include <queue>
-#include <set>
-#include <sstream>
-#include <stack>
-#include <utility>
-#include <vector>
 
-#define   FOR(i, a, b)    for ( typeof(a) i = (a) ; i < (b) ; ++i )
-#define   REP(i, n)       FOR(i, 0, n)
-#define   ALL(a)          (a).begin(), (a).end()
+#define   FOR(i, a, b)    for ( decltype(a) i = (a) ; i < (b) ; ++i )
 
 using namespace std;
-
-typedef pair< int, int >  ii;
-typedef long long         ll;
-
-// }}}
 
 int main()
 {
   int n, m, k, exp;
-  ll  ans = 1;
+  long long  ans = 1;
 
   scanf("%d %d %d\n", &n, &m, &k);
 
