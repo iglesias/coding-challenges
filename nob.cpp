@@ -19,7 +19,7 @@
 
 #define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 
-template<size_t N> auto make_cmd(std::array<std::string_view, N> strings) -> Cmd
+template<size_t N> auto make_cmd(const std::array<std::string_view, N>& strings) -> Cmd
 {
     Cmd cmd;
     cmd.line.reserve(strings.size());
@@ -27,7 +27,7 @@ template<size_t N> auto make_cmd(std::array<std::string_view, N> strings) -> Cmd
     return cmd;
 }
 
-template<size_t N> void make_and_run_cmd(std::array<std::string_view, N> strings)
+template<size_t N> void make_and_run_cmd(const std::array<std::string_view, N>& strings)
 {
     const auto& cmd = make_cmd(strings);
     INFO("make_and_run_cmd: %s", cmd_show(cmd).c_str());
