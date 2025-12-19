@@ -36,40 +36,40 @@
 typedef pid_t Pid;
 typedef int Fd;
 
-#include <assert.h>
-#include <stdio.h>
-#include <cstdlib>
-#include <stdarg.h>
-#include <string.h>
-#include <errno.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdarg>
+#include <cstring>
 
-#define FOREACH_ARRAY(type, elem, array, body)  \
-    for (size_t elem_##index = 0;                           \
-         elem_##index < array.count;                        \
-         ++elem_##index)                                    \
-    {                                                       \
-        type *elem = &array.elems[elem_##index];            \
-        body;                                               \
-    }
+#include <iostream>
+#include <filesystem>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <system_error>
+#include <vector>
 
-typedef const char * Cstr;
 
-int cstr_ends_with(Cstr cstr, Cstr postfix);
+using Cstr_Array = std::vector<std::string>;
+
+bool cstr_ends_with(const char* cstr, const char* postfix);
 #define ENDS_WITH(cstr, postfix) cstr_ends_with(cstr, postfix)
 
-Cstr cstr_no_ext(Cstr path);
+std::string cstr_no_ext(const char* path);
 #define NOEXT(path) cstr_no_ext(path)
 
-typedef struct {
-    Cstr *elems;
-    size_t count;
-} Cstr_Array;
+template<typename... Args>
+Cstr_Array cstr_array_make(Args... args)
+{
+    Cstr_Array result;
+    (result.emplace_back(args), ...);
+    return result;
+}
+Cstr_Array cstr_array_from_int_char(int argc, char** argv);
+std::string cstr_array_join(const char* sep, const Cstr_Array &cstrs);
 
-Cstr_Array cstr_array_make(Cstr first, ...);
-Cstr_Array cstr_array_append(Cstr_Array cstrs, Cstr cstr);
-Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs);
-
-#define JOIN(sep, ...) cstr_array_join(sep, cstr_array_make(__VA_ARGS__, NULL))
+#define JOIN(sep, ...) cstr_array_join(sep, cstr_array_make(__VA_ARGS__))
 #define CONCAT(...) JOIN("", __VA_ARGS__)
 #define PATH(...) JOIN(PATH_SEP, __VA_ARGS__)
 #define GETCWD() path_get_current_dir()
@@ -86,33 +86,22 @@ typedef struct {
     Cstr_Array line;
 } Cmd;
 
-Fd fd_open_for_read(Cstr path);
-Fd fd_open_for_write(Cstr path);
-void fd_close(Fd fd);
-void pid_wait(Pid pid);
-Cstr cmd_show(Cmd cmd);
+std::string cmd_show(const Cmd &cmd);
 Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout);
 void cmd_run_sync(Cmd cmd);
 
-typedef struct {
-    Cmd *elems;
-    size_t count;
-} Cmd_Array;
+typedef std::vector<Cmd> Cmd_Array;
 
 // TODO(#1): no way to disable echo in nobuild scripts
 // TODO(#2): no way to ignore fails
 #define CMD(...)                                        \
     do {                                                \
         Cmd cmd = {                                     \
-            .line = cstr_array_make(__VA_ARGS__, NULL)  \
+            .line = cstr_array_make(__VA_ARGS__)  \
         };                                              \
-        Cstr cmd_to_show = cmd_show(cmd);               \
-        INFO("CMD: %s", cmd_to_show);                   \
-        std::free(reinterpret_cast<void*>(              \
-              const_cast<char*>(cmd_to_show)));         \
+        std::string cmd_to_show = cmd_show(cmd);        \
+        INFO("CMD: %s", cmd_to_show.c_str());           \
         cmd_run_sync(cmd);                              \
-        std::free(reinterpret_cast<void*>(              \
-            const_cast<char**>(cmd.line.elems)));       \
     } while (0)
 
 typedef enum {
@@ -132,31 +121,31 @@ typedef struct {
 #define IN(path) \
     (Chain_Token) { \
         .type = CHAIN_TOKEN_IN, \
-        .args = cstr_array_make(path, NULL) \
+        .args = cstr_array_make(path) \
     }
 
 #define OUT(path) \
     (Chain_Token) { \
         .type = CHAIN_TOKEN_OUT, \
-        .args = cstr_array_make(path, NULL) \
+        .args = cstr_array_make(path) \
     }
 
 #define CHAIN_CMD(...) \
     (Chain_Token) { \
         .type = CHAIN_TOKEN_CMD, \
-        .args = cstr_array_make(__VA_ARGS__, NULL) \
+        .args = cstr_array_make(__VA_ARGS__) \
     }
 
 // TODO(#20): pipes do not allow redirecting stderr
-typedef struct {
-    Cstr input_filepath;
+struct Chain {
+    std::optional<std::string> input_filepath;
     Cmd_Array cmds;
-    Cstr output_filepath;
-} Chain;
+    std::optional<std::string> output_filepath;
+};
 
 Chain chain_build_from_tokens(Chain_Token first, ...);
-void chain_run_sync(Chain chain);
-void chain_echo(Chain chain);
+void chain_run_sync(const Chain &chain);
+void chain_echo(const Chain &chain);
 
 // TODO(#15): PIPE does not report where exactly a syntactic error has happened
 #define CHAIN(...)                                                      \
@@ -199,15 +188,13 @@ void chain_echo(Chain chain);
         const char *binary_path = argv[0];                             \
                                                                        \
         if (is_path1_modified_after_path2(source_path, binary_path)) { \
-            RENAME(binary_path, CONCAT(binary_path, ".old"));          \
+            RENAME(binary_path, CONCAT(binary_path, ".old").data());   \
             REBUILD_URSELF(binary_path, source_path);                  \
             Cmd cmd = {                                                \
-                .line = {                                              \
-                    .elems = (Cstr*) argv,                             \
-                    .count = static_cast<size_t>(argc),                                     \
-                },                                                     \
+                .line = cstr_array_from_int_char(argc, argv),           \
             };                                                         \
-            INFO("CMD: %s", cmd_show(cmd));                            \
+            std::string cmd_to_show = cmd_show(cmd);                   \
+            INFO("CMD: %s", cmd_to_show.c_str());                      \
             cmd_run_sync(cmd);                                         \
             exit(0);                                                   \
         }                                                              \
@@ -216,55 +203,35 @@ void chain_echo(Chain chain);
 
 void rebuild_urself(const char *binary_path, const char *source_path);
 
-int path_is_dir(Cstr path);
+bool path_is_dir(const char* path);
 #define IS_DIR(path) path_is_dir(path)
 
-int path_exists(Cstr path);
+bool path_exists(const char* path);
 #define PATH_EXISTS(path) path_exists(path)
 
-void path_mkdirs(Cstr_Array path);
+void path_mkdirs(const Cstr_Array &path);
 #define MKDIRS(...)                                             \
     do {                                                        \
-        Cstr_Array path = cstr_array_make(__VA_ARGS__, NULL);   \
-        INFO("MKDIRS: %s", cstr_array_join(PATH_SEP, path));    \
+        Cstr_Array path = cstr_array_make(__VA_ARGS__);   \
+        INFO("MKDIRS: %s", cstr_array_join(PATH_SEP, path).c_str());    \
         path_mkdirs(path);                                      \
     } while (0)
 
-void path_rename(Cstr old_path, Cstr new_path);
+void path_rename(const char* old_path, const char* new_path);
 #define RENAME(old_path, new_path)                    \
     do {                                              \
         INFO("RENAME: %s -> %s", old_path, new_path); \
         path_rename(old_path, new_path);              \
     } while (0)
 
-void path_rm(Cstr path);
+void path_rm(const char* path);
 #define RM(path)                                \
     do {                                        \
         INFO("RM: %s", path);                   \
         path_rm(path);                          \
     } while(0)
 
-#define FOREACH_FILE_IN_DIR(file, dirpath, body)        \
-    do {                                                \
-        struct dirent *dp = NULL;                       \
-        DIR *dir = opendir(dirpath);                    \
-        if (dir == NULL) {                              \
-            PANIC("could not open directory %s: %s",    \
-                  dirpath, strerror(errno));            \
-        }                                               \
-        errno = 0;                                      \
-        while ((dp = readdir(dir))) {                   \
-            const char *file = dp->d_name;              \
-            body;                                       \
-        }                                               \
-                                                        \
-        if (errno > 0) {                                \
-            PANIC("could not read directory %s: %s",    \
-                  dirpath, strerror(errno));            \
-        }                                               \
-                                                        \
-        closedir(dir);                                  \
-    } while(0)
+
 
 #if defined(__GNUC__) || defined(__clang__)
 // https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html
@@ -273,125 +240,55 @@ void path_rm(Cstr path);
 #define NOBUILD_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK)
 #endif
 
-void VLOG(FILE *stream, Cstr tag, Cstr fmt, va_list args);
-void INFO(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
-void WARN(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
-void ERRO(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
-void PANIC(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
-
-char *shift_args(int *argc, char ***argv);
+void VLOG(FILE *stream, const char* tag, const char* fmt, va_list args);
+void INFO(const char* fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
+void WARN(const char* fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
+void ERRO(const char* fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
+void PANIC(const char* fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef NOBUILD_IMPLEMENTATION
 
-Cstr_Array cstr_array_append(Cstr_Array cstrs, Cstr cstr)
+Cstr_Array cstr_array_from_int_char(int argc, char** argv)
 {
-    Cstr_Array result = {
-        .count = cstrs.count + 1
-    };
-    result.elems = reinterpret_cast<const char**>(std::malloc(sizeof(result.elems[0]) * result.count));
-    memcpy(result.elems, cstrs.elems, cstrs.count * sizeof(result.elems[0]));
-    result.elems[cstrs.count] = cstr;
+    Cstr_Array result;
+    for (int i = 0; i < argc; ++i) {
+        result.push_back(argv[i]);
+    }
     return result;
 }
 
-int cstr_ends_with(Cstr cstr, Cstr postfix)
+bool cstr_ends_with(const char* cstr, const char* postfix)
 {
-    const size_t cstr_len = strlen(cstr);
-    const size_t postfix_len = strlen(postfix);
-    return postfix_len <= cstr_len
-           && strcmp(cstr + cstr_len - postfix_len, postfix) == 0;
+    std::string_view s(cstr);
+    std::string_view p(postfix);
+    if (s.length() < p.length()) {
+        return false;
+    }
+    return s.substr(s.length() - p.length()) == p;
 }
 
-Cstr cstr_no_ext(Cstr path)
+std::string cstr_no_ext(const char* path)
 {
-    size_t n = strlen(path);
-    while (n > 0 && path[n - 1] != '.') {
-        n -= 1;
+    std::string_view p(path);
+    size_t dot_pos = p.find_last_of('.');
+    if (dot_pos != std::string_view::npos) {
+        return std::string(p.substr(0, dot_pos));
     }
-
-    if (n > 0) {
-        char *result = reinterpret_cast<char*>(std::malloc(n));
-        memcpy(result, path, n);
-        result[n - 1] = '\0';
-
-        return result;
-    } else {
-        return path;
-    }
+    return std::string(p);
 }
 
-Cstr_Array cstr_array_make(Cstr first, ...)
+std::string cstr_array_join(const char* sep, const Cstr_Array &cstrs)
 {
-    Cstr_Array result = {0};
-
-    if (first == NULL) {
-        return result;
-    }
-
-    result.count += 1;
-
-    va_list args;
-    va_start(args, first);
-    for (Cstr next = va_arg(args, Cstr);
-            next != NULL;
-            next = va_arg(args, Cstr)) {
-        result.count += 1;
-    }
-    va_end(args);
-
-    result.elems = reinterpret_cast<const char**>(std::malloc(sizeof(result.elems[0]) * result.count));
-    if (result.elems == NULL) {
-        PANIC("could not allocate memory: %s", strerror(errno));
-    }
-    result.count = 0;
-
-    result.elems[result.count++] = first;
-
-    va_start(args, first);
-    for (Cstr next = va_arg(args, Cstr);
-            next != NULL;
-            next = va_arg(args, Cstr)) {
-        result.elems[result.count++] = next;
-    }
-    va_end(args);
-
-    return result;
-}
-
-Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs)
-{
-    if (cstrs.count == 0) {
-        return "";
-    }
-
-    const size_t sep_len = strlen(sep);
-    size_t len = 0;
-    for (size_t i = 0; i < cstrs.count; ++i) {
-        len += strlen(cstrs.elems[i]);
-    }
-
-    const size_t result_len = (cstrs.count - 1) * sep_len + len + 1;
-    char *result = reinterpret_cast<char*>(std::malloc(sizeof(char) * result_len));
-    if (result == NULL) {
-        PANIC("could not allocate memory: %s", strerror(errno));
-    }
-
-    len = 0;
-    for (size_t i = 0; i < cstrs.count; ++i) {
+    std::stringstream ss;
+    for (size_t i = 0; i < cstrs.size(); ++i) {
         if (i > 0) {
-            memcpy(result + len, sep, sep_len);
-            len += sep_len;
+            ss << sep;
         }
-
-        size_t elem_len = strlen(cstrs.elems[i]);
-        memcpy(result + len, cstrs.elems[i], elem_len);
-        len += elem_len;
+        ss << cstrs[i];
     }
-    result[len] = '\0';
-
-    return result;
+    return ss.str();
 }
 
 Pipe pipe_make(void)
@@ -409,7 +306,7 @@ Pipe pipe_make(void)
     return pip;
 }
 
-Fd fd_open_for_read(Cstr path)
+Fd fd_open_for_read(const char* path)
 {
     Fd result = open(path, O_RDONLY);
     if (result < 0) {
@@ -418,7 +315,7 @@ Fd fd_open_for_read(Cstr path)
     return result;
 }
 
-Fd fd_open_for_write(Cstr path)
+Fd fd_open_for_write(const char* path)
 {
     Fd result = open(path,
                      O_WRONLY | O_CREAT | O_TRUNC,
@@ -457,7 +354,7 @@ void pid_wait(Pid pid)
     }
 }
 
-Cstr cmd_show(Cmd cmd)
+std::string cmd_show(const Cmd &cmd)
 {
     // TODO(#31): cmd_show does not render the command line properly
     // - No string literals when arguments contains space
@@ -470,12 +367,17 @@ Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
 {
     pid_t cpid = fork();
     if (cpid < 0) {
+        std::string cmd_str = cmd_show(cmd);
         PANIC("Could not fork child process: %s: %s",
-              cmd_show(cmd), strerror(errno));
+              cmd_str.c_str(), strerror(errno));
     }
 
     if (cpid == 0) {
-        Cstr_Array args = cstr_array_append(cmd.line, NULL);
+        std::vector<const char*> args;
+        for (const auto& s : cmd.line) {
+            args.push_back(s.c_str());
+        }
+        args.push_back(nullptr);
 
         if (fdin) {
             if (dup2(*fdin, STDIN_FILENO) < 0) {
@@ -489,9 +391,10 @@ Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
             }
         }
 
-        if (execvp(args.elems[0], (char * const*) args.elems) < 0) {
+        if (execvp(args[0], (char * const*) args.data()) < 0) {
+            std::string cmd_str = cmd_show(cmd);
             PANIC("Could not exec child process: %s: %s",
-                  cmd_show(cmd), strerror(errno));
+                  cmd_str.c_str(), strerror(errno));
         }
     }
 
@@ -503,75 +406,48 @@ void cmd_run_sync(Cmd cmd)
     pid_wait(cmd_run_async(cmd, NULL, NULL));
 }
 
-static void chain_set_input_output_files_or_count_cmds(Chain *chain, Chain_Token token)
-{
-    switch (token.type) {
-    case CHAIN_TOKEN_CMD: {
-        chain->cmds.count += 1;
-    }
-    break;
-
-    case CHAIN_TOKEN_IN: {
-        if (chain->input_filepath) {
-            PANIC("Input file path was already set");
-        }
-
-        chain->input_filepath = token.args.elems[0];
-    }
-    break;
-
-    case CHAIN_TOKEN_OUT: {
-        if (chain->output_filepath) {
-            PANIC("Output file path was already set");
-        }
-
-        chain->output_filepath = token.args.elems[0];
-    }
-    break;
-
-    case CHAIN_TOKEN_END:
-    default: {
-        assert(0 && "unreachable");
-        exit(1);
-    }
-    }
-}
-
-static void chain_push_cmd(Chain *chain, Chain_Token token)
-{
-    if (token.type == CHAIN_TOKEN_CMD) {
-        chain->cmds.elems[chain->cmds.count++] = (Cmd) {
-            .line = token.args
-        };
-    }
-}
-
 Chain chain_build_from_tokens(Chain_Token first, ...)
 {
-    Chain result = {0};
+    Chain result;
 
-    chain_set_input_output_files_or_count_cmds(&result, first);
+    auto process_token = [&](Chain_Token token) {
+        switch (token.type) {
+        case CHAIN_TOKEN_CMD: {
+            result.cmds.push_back({.line = token.args});
+        }
+        break;
+
+        case CHAIN_TOKEN_IN: {
+            if (result.input_filepath) {
+                PANIC("Input file path was already set");
+            }
+            result.input_filepath = token.args.front();
+        }
+        break;
+
+        case CHAIN_TOKEN_OUT: {
+            if (result.output_filepath) {
+                PANIC("Output file path was already set");
+            }
+            result.output_filepath = token.args.front();
+        }
+        break;
+
+        case CHAIN_TOKEN_END:
+        default: {
+            assert(0 && "unreachable");
+            exit(1);
+        }
+        }
+    };
+
+    process_token(first);
+
     va_list args;
     va_start(args, first);
     Chain_Token next = va_arg(args, Chain_Token);
     while (next.type != CHAIN_TOKEN_END) {
-        chain_set_input_output_files_or_count_cmds(&result, next);
-        next = va_arg(args, Chain_Token);
-    }
-    va_end(args);
-
-    result.cmds.elems = reinterpret_cast<Cmd*>(malloc(sizeof(result.cmds.elems[0]) * result.cmds.count));
-    if (result.cmds.elems == NULL) {
-        PANIC("could not allocate memory: %s", strerror(errno));
-    }
-    result.cmds.count = 0;
-
-    chain_push_cmd(&result, first);
-
-    va_start(args, first);
-    next = va_arg(args, Chain_Token);
-    while (next.type != CHAIN_TOKEN_END) {
-        chain_push_cmd(&result, next);
+        process_token(next);
         next = va_arg(args, Chain_Token);
     }
     va_end(args);
@@ -579,242 +455,177 @@ Chain chain_build_from_tokens(Chain_Token first, ...)
     return result;
 }
 
-void chain_run_sync(Chain chain)
+void chain_run_sync(const Chain &chain)
 {
-    if (chain.cmds.count == 0) {
+    if (chain.cmds.empty()) {
         return;
     }
 
-    Pid *cpids = reinterpret_cast<Pid*>(malloc(sizeof(Pid) * chain.cmds.count));
+    std::vector<Pid> cpids;
+    cpids.reserve(chain.cmds.size());
 
-    Pipe pip = {0};
-    Fd fdin = 0;
-    Fd *fdprev = NULL;
-
+    Fd fdin = -1;
     if (chain.input_filepath) {
-        fdin = fd_open_for_read(chain.input_filepath);
-        if (fdin < 0) {
-            PANIC("could not open file %s: %s", chain.input_filepath, strerror(errno));
-        }
-        fdprev = &fdin;
+        fdin = fd_open_for_read(chain.input_filepath->c_str());
     }
 
-    for (size_t i = 0; i < chain.cmds.count - 1; ++i) {
-        pip = pipe_make();
+    for (size_t i = 0; i < chain.cmds.size(); ++i) {
+        Fd* fdin_ptr = (fdin != -1) ? &fdin : nullptr;
+        bool is_last = (i == chain.cmds.size() - 1);
 
-        cpids[i] = cmd_run_async(
-                       chain.cmds.elems[i],
-                       fdprev,
-                       &pip.write);
-
-        if (fdprev) fd_close(*fdprev);
-        fd_close(pip.write);
-        fdprev = &fdin;
-        fdin = pip.read;
-    }
-
-    {
-        Fd fdout = 0;
-        Fd *fdnext = NULL;
-
-        if (chain.output_filepath) {
-            fdout = fd_open_for_write(chain.output_filepath);
-            if (fdout < 0) {
-                PANIC("could not open file %s: %s",
-                      chain.output_filepath,
-                      strerror(errno));
+        if (is_last) {
+            Fd fdout = -1;
+            if (chain.output_filepath) {
+                fdout = fd_open_for_write(chain.output_filepath->c_str());
             }
-            fdnext = &fdout;
+            Fd* fdout_ptr = (fdout != -1) ? &fdout : nullptr;
+
+            cpids.push_back(cmd_run_async(chain.cmds[i], fdin_ptr, fdout_ptr));
+
+            if (fdin != -1) close(fdin);
+            if (fdout != -1) close(fdout);
+        } else {
+            int pipefd[2];
+            if (pipe(pipefd) < 0) {
+                PANIC("Could not create pipe: %s", strerror(errno));
+            }
+            Fd read_end = pipefd[0];
+            Fd write_end = pipefd[1];
+
+            cpids.push_back(cmd_run_async(chain.cmds[i], fdin_ptr, &write_end));
+
+            if (fdin != -1) close(fdin);
+            close(write_end);
+            fdin = read_end;
         }
-
-        const size_t last = chain.cmds.count - 1;
-        cpids[last] =
-            cmd_run_async(
-                chain.cmds.elems[last],
-                fdprev,
-                fdnext);
-
-        if (fdprev) fd_close(*fdprev);
-        if (fdnext) fd_close(*fdnext);
     }
 
-    for (size_t i = 0; i < chain.cmds.count; ++i) {
-        pid_wait(cpids[i]);
+    for (const auto &cpid : cpids) {
+        pid_wait(cpid);
     }
 }
 
-void chain_echo(Chain chain)
+void chain_echo(const Chain &chain)
 {
-    printf("[INFO] CHAIN:");
+    std::cout << "[INFO] CHAIN:";
     if (chain.input_filepath) {
-        printf(" %s", chain.input_filepath);
+        std::cout << " " << *chain.input_filepath;
     }
 
-    FOREACH_ARRAY(Cmd, cmd, chain.cmds, {
-        printf(" |> %s", cmd_show(*cmd));
-    });
+    for (const auto &cmd : chain.cmds) {
+        std::cout << " |> " << cmd_show(cmd);
+    }
 
     if (chain.output_filepath) {
-        printf(" |> %s", chain.output_filepath);
+        std::cout << " |> " << *chain.output_filepath;
     }
 
-    printf("\n");
+    std::cout << std::endl;
 }
 
-Cstr path_get_current_dir()
+std::string path_get_current_dir()
 {
-    char *buffer = reinterpret_cast<char*>(std::malloc(PATH_MAX));
-    if (getcwd(buffer, PATH_MAX) == NULL) {
-        PANIC("could not get current directory: %s", strerror(errno));
+    std::error_code ec;
+    auto path = std::filesystem::current_path(ec);
+    if (ec) {
+        PANIC("could not get current directory: %s", ec.message().c_str());
     }
-
-    return buffer;
+    return path.string();
 }
 
-void path_set_current_dir(Cstr path)
+void path_set_current_dir(const char* path)
 {
-    if (chdir(path) < 0) {
+    std::error_code ec;
+    std::filesystem::current_path(path, ec);
+    if (ec) {
         PANIC("could not set current directory to %s: %s",
-              path, strerror(errno));
+              path, ec.message().c_str());
     }
 }
 
-int path_exists(Cstr path)
+bool path_exists(const char* path)
 {
-    struct stat statbuf = {0};
-    if (stat(path, &statbuf) < 0) {
-        if (errno == ENOENT) {
-            errno = 0;
-            return 0;
+    std::error_code ec;
+    bool result = std::filesystem::exists(path, ec);
+    if (ec) {
+        PANIC("could not check existence of path %s: %s", path, ec.message().c_str());
+    }
+    return result;
+}
+
+bool path_is_dir(const char* path)
+{
+    std::error_code ec;
+    bool result = std::filesystem::is_directory(path, ec);
+    if (ec) {
+        if (ec.value() == ENOENT) {
+            return false;
         }
-
-        PANIC("could not retrieve information about file %s: %s",
-              path, strerror(errno));
+        PANIC("could not check if path %s is a directory: %s", path, ec.message().c_str());
     }
-
-    return 1;
+    return result;
 }
 
-int path_is_dir(Cstr path)
+void path_rename(const char* old_path, const char* new_path)
 {
-    struct stat statbuf = {0};
-    if (stat(path, &statbuf) < 0) {
-        if (errno == ENOENT) {
-            errno = 0;
-            return 0;
-        }
-
-        PANIC("could not retrieve information about file %s: %s",
-              path, strerror(errno));
-    }
-
-    return S_ISDIR(statbuf.st_mode);
-}
-
-void path_rename(const char *old_path, const char *new_path)
-{
-    if (rename(old_path, new_path) < 0) {
-        PANIC("could not rename %s to %s: %s", old_path, new_path,
-              strerror(errno));
+    std::error_code ec;
+    std::filesystem::rename(old_path, new_path, ec);
+    if (ec) {
+        PANIC("could not rename %s to %s: %s", old_path, new_path, ec.message().c_str());
     }
 }
 
-void path_mkdirs(Cstr_Array path)
+void path_mkdirs(const Cstr_Array &path)
 {
-    if (path.count == 0) {
+    std::filesystem::path p;
+    for(const auto& part : path) {
+        p /= part;
+    }
+
+    if (p.empty()) {
         return;
     }
 
-    size_t len = 0;
-    for (size_t i = 0; i < path.count; ++i) {
-        len += strlen(path.elems[i]);
-    }
-
-    size_t seps_count = path.count - 1;
-    const size_t sep_len = strlen(PATH_SEP);
-
-    char *result = reinterpret_cast<char*>(std::malloc(len + seps_count * sep_len + 1));
-
-    len = 0;
-    for (size_t i = 0; i < path.count; ++i) {
-        size_t n = strlen(path.elems[i]);
-        memcpy(result + len, path.elems[i], n);
-        len += n;
-
-        if (seps_count > 0) {
-            memcpy(result + len, PATH_SEP, sep_len);
-            len += sep_len;
-            seps_count -= 1;
-        }
-
-        result[len] = '\0';
-
-        if (mkdir(result, 0755) < 0) {
-            if (errno == EEXIST) {
-                errno = 0;
-                WARN("directory %s already exists", result);
-            } else {
-                PANIC("could not create directory %s: %s", result, strerror(errno));
-            }
-        }
+    std::error_code ec;
+    std::filesystem::create_directories(p, ec);
+    if (ec) {
+        PANIC("could not create directories %s: %s", p.c_str(), ec.message().c_str());
     }
 }
 
-void path_rm(Cstr path)
+void path_rm(const char* path)
 {
-    if (IS_DIR(path)) {
-        FOREACH_FILE_IN_DIR(file, path, {
-            if (strcmp(file, ".") != 0 && strcmp(file, "..") != 0)
-            {
-                path_rm(PATH(path, file));
-            }
-        });
-
-        if (rmdir(path) < 0) {
-            if (errno == ENOENT) {
-                errno = 0;
-                WARN("directory %s does not exist", path);
-            } else {
-                PANIC("could not remove directory %s: %s", path, strerror(errno));
-            }
-        }
-    } else {
-        if (unlink(path) < 0) {
-            if (errno == ENOENT) {
-                errno = 0;
-                WARN("file %s does not exist", path);
-            } else {
-                PANIC("could not remove file %s: %s", path, strerror(errno));
-            }
-        }
+    std::error_code ec;
+    std::filesystem::remove_all(path, ec);
+    if (ec) {
+        PANIC("could not remove %s: %s", path, ec.message().c_str());
     }
 }
 
-int is_path1_modified_after_path2(const char *path1, const char *path2)
+bool is_path1_modified_after_path2(const char *path1, const char *path2)
 {
-    struct stat statbuf = {0};
-
-    if (stat(path1, &statbuf) < 0) {
-        PANIC("could not stat %s: %s\n", path1, strerror(errno));
+    std::error_code ec;
+    auto time1 = std::filesystem::last_write_time(path1, ec);
+    if (ec) {
+        PANIC("could not stat %s: %s", path1, ec.message().c_str());
     }
-    int path1_time = statbuf.st_mtime;
 
-    if (stat(path2, &statbuf) < 0) {
-        PANIC("could not stat %s: %s\n", path2, strerror(errno));
+    auto time2 = std::filesystem::last_write_time(path2, ec);
+    if (ec) {
+        PANIC("could not stat %s: %s", path2, ec.message().c_str());
     }
-    int path2_time = statbuf.st_mtime;
 
-    return path1_time > path2_time;
+    return time1 > time2;
 }
 
-void VLOG(FILE *stream, Cstr tag, Cstr fmt, va_list args)
+void VLOG(FILE *stream, const char* tag, const char* fmt, va_list args)
 {
     fprintf(stream, "[%s] ", tag);
     vfprintf(stream, fmt, args);
     fprintf(stream, "\n");
 }
 
-void INFO(Cstr fmt, ...)
+void INFO(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -822,7 +633,7 @@ void INFO(Cstr fmt, ...)
     va_end(args);
 }
 
-void WARN(Cstr fmt, ...)
+void WARN(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -830,7 +641,7 @@ void WARN(Cstr fmt, ...)
     va_end(args);
 }
 
-void ERRO(Cstr fmt, ...)
+void ERRO(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -838,22 +649,13 @@ void ERRO(Cstr fmt, ...)
     va_end(args);
 }
 
-void PANIC(Cstr fmt, ...)
+void PANIC(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
     VLOG(stderr, "ERRO", fmt, args);
     va_end(args);
     exit(1);
-}
-
-char *shift_args(int *argc, char ***argv)
-{
-    assert(*argc > 0);
-    char *result = **argv;
-    *argc -= 1;
-    *argv += 1;
-    return result;
 }
 
 #endif // NOBUILD_IMPLEMENTATION

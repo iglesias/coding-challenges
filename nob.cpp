@@ -5,26 +5,34 @@
 #include <array>
 #include <cstdlib>
 #include <filesystem>
+#include <map>
+#include <memory>
 #include <queue>
 #include <string_view>
 #include <vector>
 
 #define CFLAGS    "-std=c2x",   "-Wall", "-Wextra", "-pedantic"
-#define CPPFLAGS  "-std=c++23", "-Wall", "-Wconversion", "-Wextra", "-pedantic", "-fsanitize=address,undefined", "-fsanitize-address-use-after-scope", "-D_GLIBCXX_DEBUG"
+#define CPPFLAGS  "-std=c++23"sv, \
+                  "-Wall"sv, "-Wconversion"sv, "-Wextra"sv, "-pedantic"sv, \
+                  "-fsanitize=address,pointer-overflow,signed-integer-overflow,undefined"sv, \
+                  "-fsanitize-address-use-after-scope"sv, "-D_GLIBCXX_DEBUG"sv
 
 #define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 
+template<size_t N> auto make_cmd(const std::array<std::string_view, N>& strings) -> Cmd
+{
+    Cmd cmd;
+    cmd.line.reserve(strings.size());
+    for (size_t i = 0; i < N; i++) cmd.line.push_back(std::string{strings[i]});
+    return cmd;
+}
 
-#define MAKE_CMD(...)                                 \
-      ({Cmd cmd = {                                   \
-          .line = cstr_array_make(__VA_ARGS__, NULL)  \
-      };                                              \
-      Cstr cmd_to_show = cmd_show(cmd);               \
-      INFO("MAKE_CMD: %s", cmd_to_show);              \
-      std::free(reinterpret_cast<void*>(              \
-          const_cast<char*>(cmd_to_show)));           \
-      cmd;})                                          \
-
+template<size_t N> void make_and_run_cmd(const std::array<std::string_view, N>& strings)
+{
+    const auto& cmd = make_cmd(strings);
+    INFO("make_and_run_cmd: %s", cmd_show(cmd).c_str());
+    cmd_run_sync(cmd);
+}
 
 namespace fs = std::filesystem;
 
@@ -32,9 +40,7 @@ using namespace std::string_literals;  // for operator""s
 using namespace std::literals;         // for operator""sv
 
 void build_kattis_c_file(std::string_view path) {
-  Cstr noextpath = NOEXT(path.data());
-  CMD("cc", CFLAGS, "-o", noextpath, path.data());
-  std::free(reinterpret_cast<void*>(const_cast<char *>(noextpath))); // :-O
+  CMD("cc", CFLAGS, "-o", NOEXT(path.data()), path.data());
 }
 
 void build_kattis_c_files() {
@@ -46,8 +52,8 @@ void build_kattis_c_files() {
 }
 
 void build_custom_cpp_file(std::string_view filename) {
-  Cstr path = PATH("custom", filename.data());
-  CMD("g++", CPPFLAGS, "-o", NOEXT(path), path);
+  auto path = PATH("custom", filename.data());
+  CMD("g++", CPPFLAGS, "-o", NOEXT(path.data()), path);
 }
 
 void build_custom_cpp_files() {
@@ -59,45 +65,52 @@ void build_custom_cpp_files() {
     }
 }
 
-template<size_t N>
-void make_and_run_cmd(std::array<Cstr, N> strings)
-{
-    Cmd cmd;
-    cmd.line.count = strings.size();
-    cmd.line.elems = strings.data();
-    //TODO FIX leaks.
-    INFO("make_and_run_cmd: %s", cmd_show(cmd));
-    cmd_run_sync(cmd);
-}
-
 void build_cpp_file(std::string_view filename)
 {
-    Cstr path = PATH(filename.data());
-    make_and_run_cmd(std::array{"g++", CPPFLAGS, "-o", NOEXT(path), path});
+    auto path = PATH(filename.data());
+    make_and_run_cmd(std::array{"g++"sv, CPPFLAGS, std::string_view{path},
+                                "-o"sv, std::string_view{NOEXT(path.data())}});
 }
 
 void build_and_run_gtest_file(std::string_view filename)
 {
-    Cstr path = PATH(filename.data());
-    CMD("g++", CPPFLAGS, "-o", NOEXT(path), path, "-lgtest");
+    auto path = PATH(filename.data());
+    CMD("g++", CPPFLAGS, "-o", NOEXT(path.data()), path, "-lgtest");
 #ifndef BUILD_ONLY // github.com/iglesias/coding-challenges/actions/runs/12532941559/job/34952138092#step:4:943
-    CMD(NOEXT(path));
+    CMD(NOEXT(path.data()));
 #endif
 }
 
 Pid build_gtest_file_async(std::string_view path)
 {
-    Cstr noextpath = NOEXT(path.data());
-    Cmd cmd = MAKE_CMD("g++", CPPFLAGS, "-o", noextpath, path.data(), "-lgtest");
+    auto noextpath = NOEXT(path.data());
+    const auto& cmd = make_cmd(std::array{"g++"sv, CPPFLAGS, std::string_view{path},
+                                          "-o"sv, std::string_view{noextpath},
+                                          "-lgtest"sv});
     Pid pid = cmd_run_async(cmd, NULL, NULL);
-    std::free(reinterpret_cast<void*>(const_cast<char**>(cmd.line.elems)));
-    std::free(reinterpret_cast<void*>(const_cast<char *>(noextpath))); // :-O
     return pid;
 }
 
 Pid run_gtest_file_async(std::string_view filename)
 {
-    return cmd_run_async(MAKE_CMD(NOEXT(PATH(filename.data()))), NULL, NULL);
+    auto cmd = make_cmd(std::array{std::string_view{NOEXT(filename.data())}});
+    return cmd_run_async(cmd, NULL, NULL);
+}
+
+
+std::map<std::string_view, std::vector<std::unique_ptr<Cmd>>> specifics;
+
+void init_specifics()
+{
+    using CmdPtr = std::unique_ptr<Cmd>;
+    std::vector<CmdPtr> cmds;
+    cmds.push_back(std::make_unique<Cmd>(make_cmd(
+            std::array{"g++ -std=c++20 -fmodules-ts -x c++-system-header array"sv})));
+    cmds.push_back(std::make_unique<Cmd>(make_cmd(
+            std::array{"g++ -std=c++20 -fmodules-ts -x c++-system-header algorithm"sv})));
+    //TODO add last command that will be modified later, when the complete path is available,
+    // appending "-o NOEXT(path)" and "path"
+    specifics.emplace("3012.cpp", std::move(cmds));
 }
 
 void work_out_leetcode()
@@ -106,10 +119,10 @@ void work_out_leetcode()
     for (const auto& entry : fs::directory_iterator("leetcode")) if (fs::is_regular_file(entry.path())) {
         const std::string& filename = entry.path().filename().string();
         if (filename == "3012.cpp") {
-            Cstr path = PATH(("leetcode/" + filename).c_str());
+            auto path = PATH(("leetcode/" + filename).c_str());
             CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "array");
             CMD("g++", "-std=c++20", "-fmodules-ts", "-x", "c++-system-header", "algorithm");
-            CMD("g++", "-std=c++20", "-fmodules-ts", "-Wall", "-Wextra", "-pedantic", "-Wconversion", "-o", NOEXT(path), path);
+            CMD("g++", "-std=c++20", "-fmodules-ts", "-Wall", "-Wextra", "-pedantic", "-Wconversion", "-o", NOEXT(path.data()), path);
             continue; }
         if (filename.ends_with(".cpp")) pids.push_back(build_gtest_file_async("leetcode/" + filename)); }
 
@@ -137,12 +150,12 @@ void build_codeforces_cpp_files() {
         // FIXME: auto-detect when compilation fails with modern standards and if desired
         // to keep the old file as it is, revert here to using older -std= option.
         if (filename == "pocketbook.cc" or filename == "steps.cc" or filename == "phonenumbers.cc") {
-          Cstr path = PATH(std::string_view(directoriesQ.front() + "/" + filename).data());
-          CMD("g++", "-Wall", "-Wextra", "-std=gnu++17", "-pedantic", "-Wconversion", "-o", NOEXT(path), path);
+          auto path = PATH(std::string_view(directoriesQ.front() + "/" + filename).data());
+          CMD("g++", "-Wall", "-Wextra", "-std=gnu++17", "-pedantic", "-Wconversion", "-o", NOEXT(path.data()), path);
           continue;
         } else if (filename == "marks.cc") {
-          Cstr path = PATH(std::string_view(directoriesQ.front() + "/" + filename).data());
-          CMD("g++", "-Wall", "-Wextra", "-std=gnu++11", "-pedantic", "-Wconversion", "-o", NOEXT(path), path);
+          auto path = PATH(std::string_view(directoriesQ.front() + "/" + filename).data());
+          CMD("g++", "-Wall", "-Wextra", "-std=gnu++11", "-pedantic", "-Wconversion", "-o", NOEXT(path.data()), path);
           continue;
         }
         //
