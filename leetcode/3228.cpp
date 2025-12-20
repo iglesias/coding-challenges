@@ -1,6 +1,8 @@
 #include <cassert>
 #include <string>
 
+#include <gtest/gtest.h>
+
 int maxOperationsSlow(std::string s) {
     int ans = 0;
     std::string::size_type i = 0;
@@ -56,3 +58,24 @@ int maxOperations(std::string const& s) {
  i=2 s="0001111"
 
  */
+
+TEST(MaxNumberSlow, Example1) {
+    EXPECT_EQ(maxOperationsSlow("1001101"), 4);
+}
+
+TEST(MaxNumber, Example1) {
+    EXPECT_EQ(maxOperations("1001101"), 4);
+}
+
+TEST(MaxNumberSlow, Example2) {
+    EXPECT_EQ(maxOperationsSlow("00111"), 0);
+}
+
+TEST(MaxNumber, Example2) {
+    EXPECT_EQ(maxOperations("00111"), 0);
+}
+
+int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
