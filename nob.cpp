@@ -1,4 +1,3 @@
-// TODO add to build benchmark in adventofcode/2023/day/14/parabolic_reflector_dish_benchmark
 #define NOBUILD_IMPLEMENTATION
 #include "./nob.h"
 

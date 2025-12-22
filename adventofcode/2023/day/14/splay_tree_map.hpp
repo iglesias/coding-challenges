@@ -57,22 +57,23 @@ template<typename K, typename V> class map {
   }
 
   void splay(node *x) {
-    if (!x->parent) return;
-    if (!x->parent->parent) {
-      if (x->parent->left == x) right_rotate(x->parent);
-      else left_rotate(x->parent);
-    } else if (x->parent->left == x && x->parent->parent->left == x->parent) {
-      right_rotate(x->parent->parent);
-      right_rotate(x->parent);
-    } else if (x->parent->right == x && x->parent->parent->right == x->parent) {
-      left_rotate(x->parent->parent);
-      left_rotate(x->parent);
-    } else if (x->parent->left == x && x->parent->parent->right == x->parent) {
-      right_rotate(x->parent);
-      left_rotate(x->parent);
-    } else {
-      left_rotate(x->parent);
-      right_rotate(x->parent);
+    while (x->parent) {
+      if (!x->parent->parent) {
+        if (x->parent->left == x) right_rotate(x->parent);
+        else left_rotate(x->parent);
+      } else if (x->parent->left == x && x->parent->parent->left == x->parent) {
+        right_rotate(x->parent->parent);
+        right_rotate(x->parent);
+      } else if (x->parent->right == x && x->parent->parent->right == x->parent) {
+        left_rotate(x->parent->parent);
+        left_rotate(x->parent);
+      } else if (x->parent->left == x && x->parent->parent->right == x->parent) {
+        right_rotate(x->parent);
+        left_rotate(x->parent);
+      } else {
+        left_rotate(x->parent);
+        right_rotate(x->parent);
+      }
     }
   }
 
@@ -124,7 +125,7 @@ public:
   }
 
   //FIXME precondition: contains(key) (or insert(key)) was called last,
-  // with no ohter insertion or lookup after it
+  // with no other insertion or lookup after it
   V at([[maybe_unused]] const K& key) {
     return root->key_value.second;
   }

@@ -1,0 +1,16 @@
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "google-benchmark",
+    commit = "48f5cc21bac647a8a64e9787cb84f349e334b7ac",
+    remote = "https://github.com/google/benchmark/",
+)
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "parabolic_reflector_dish_input",
+    url = "https://raw.githubusercontent.com/mattcl/unofficial-aoc2023-inputs/refs/heads/master/day_014/input-004.txt",
+    #sha256 = "8d21d755f69219c6aee266a34f30404fc6461f369aa39ec9b8ce7142bdb1bb17",
+    downloaded_file_path = "parabolic_reflector_dish_input.txt",
+)
