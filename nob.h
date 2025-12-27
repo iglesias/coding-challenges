@@ -53,9 +53,6 @@ typedef int Fd;
 
 using Cstr_Array = std::vector<std::string>;
 
-bool cstr_ends_with(const char* cstr, const char* postfix);
-#define ENDS_WITH(cstr, postfix) cstr_ends_with(cstr, postfix)
-
 std::string cstr_no_ext(const char* path);
 #define NOEXT(path) cstr_no_ext(path)
 
@@ -72,15 +69,6 @@ std::string cstr_array_join(const char* sep, const Cstr_Array &cstrs);
 #define JOIN(sep, ...) cstr_array_join(sep, cstr_array_make(__VA_ARGS__))
 #define CONCAT(...) JOIN("", __VA_ARGS__)
 #define PATH(...) JOIN(PATH_SEP, __VA_ARGS__)
-#define GETCWD() path_get_current_dir()
-#define SETCWD(path) path_set_current_dir(path)
-
-typedef struct {
-    Fd read;
-    Fd write;
-} Pipe;
-
-Pipe pipe_make(void);
 
 typedef struct {
     Cstr_Array line;
@@ -103,57 +91,6 @@ typedef std::vector<Cmd> Cmd_Array;
         INFO("CMD: %s", cmd_to_show.c_str());           \
         cmd_run_sync(cmd);                              \
     } while (0)
-
-typedef enum {
-    CHAIN_TOKEN_END = 0,
-    CHAIN_TOKEN_IN,
-    CHAIN_TOKEN_OUT,
-    CHAIN_TOKEN_CMD
-} Chain_Token_Type;
-
-// A single token for the CHAIN(...) DSL syntax
-typedef struct {
-    Chain_Token_Type type;
-    Cstr_Array args;
-} Chain_Token;
-
-// TODO(#17): IN and OUT are already taken by WinAPI
-#define IN(path) \
-    (Chain_Token) { \
-        .type = CHAIN_TOKEN_IN, \
-        .args = cstr_array_make(path) \
-    }
-
-#define OUT(path) \
-    (Chain_Token) { \
-        .type = CHAIN_TOKEN_OUT, \
-        .args = cstr_array_make(path) \
-    }
-
-#define CHAIN_CMD(...) \
-    (Chain_Token) { \
-        .type = CHAIN_TOKEN_CMD, \
-        .args = cstr_array_make(__VA_ARGS__) \
-    }
-
-// TODO(#20): pipes do not allow redirecting stderr
-struct Chain {
-    std::optional<std::string> input_filepath;
-    Cmd_Array cmds;
-    std::optional<std::string> output_filepath;
-};
-
-Chain chain_build_from_tokens(Chain_Token first, ...);
-void chain_run_sync(const Chain &chain);
-void chain_echo(const Chain &chain);
-
-// TODO(#15): PIPE does not report where exactly a syntactic error has happened
-#define CHAIN(...)                                                      \
-    do {                                                                \
-        Chain chain = chain_build_from_tokens(__VA_ARGS__, (Chain_Token) {0}); \
-        chain_echo(chain);                                              \
-        chain_run_sync(chain);                                          \
-    } while(0)
 
 #ifndef REBUILD_URSELF
 #  define REBUILD_URSELF(binary_path, source_path) CMD("g++", "-std=c++20", "-o", binary_path, source_path)
@@ -203,35 +140,12 @@ void chain_echo(const Chain &chain);
 
 void rebuild_urself(const char *binary_path, const char *source_path);
 
-bool path_is_dir(const char* path);
-#define IS_DIR(path) path_is_dir(path)
-
-bool path_exists(const char* path);
-#define PATH_EXISTS(path) path_exists(path)
-
-void path_mkdirs(const Cstr_Array &path);
-#define MKDIRS(...)                                             \
-    do {                                                        \
-        Cstr_Array path = cstr_array_make(__VA_ARGS__);   \
-        INFO("MKDIRS: %s", cstr_array_join(PATH_SEP, path).c_str());    \
-        path_mkdirs(path);                                      \
-    } while (0)
-
 void path_rename(const char* old_path, const char* new_path);
 #define RENAME(old_path, new_path)                    \
     do {                                              \
         INFO("RENAME: %s -> %s", old_path, new_path); \
         path_rename(old_path, new_path);              \
     } while (0)
-
-void path_rm(const char* path);
-#define RM(path)                                \
-    do {                                        \
-        INFO("RM: %s", path);                   \
-        path_rm(path);                          \
-    } while(0)
-
-
 
 #if defined(__GNUC__) || defined(__clang__)
 // https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html
@@ -259,16 +173,6 @@ Cstr_Array cstr_array_from_int_char(int argc, char** argv)
     return result;
 }
 
-bool cstr_ends_with(const char* cstr, const char* postfix)
-{
-    std::string_view s(cstr);
-    std::string_view p(postfix);
-    if (s.length() < p.length()) {
-        return false;
-    }
-    return s.substr(s.length() - p.length()) == p;
-}
-
 std::string cstr_no_ext(const char* path)
 {
     std::string_view p(path);
@@ -289,21 +193,6 @@ std::string cstr_array_join(const char* sep, const Cstr_Array &cstrs)
         ss << cstrs[i];
     }
     return ss.str();
-}
-
-Pipe pipe_make(void)
-{
-    Pipe pip = {0};
-
-    Fd pipefd[2];
-    if (pipe(pipefd) < 0) {
-        PANIC("Could not create pipe: %s", strerror(errno));
-    }
-
-    pip.read = pipefd[0];
-    pip.write = pipefd[1];
-
-    return pip;
 }
 
 Fd fd_open_for_read(const char* path)
@@ -406,199 +295,12 @@ void cmd_run_sync(Cmd cmd)
     pid_wait(cmd_run_async(cmd, NULL, NULL));
 }
 
-Chain chain_build_from_tokens(Chain_Token first, ...)
-{
-    Chain result;
-
-    auto process_token = [&](Chain_Token token) {
-        switch (token.type) {
-        case CHAIN_TOKEN_CMD: {
-            result.cmds.push_back({.line = token.args});
-        }
-        break;
-
-        case CHAIN_TOKEN_IN: {
-            if (result.input_filepath) {
-                PANIC("Input file path was already set");
-            }
-            result.input_filepath = token.args.front();
-        }
-        break;
-
-        case CHAIN_TOKEN_OUT: {
-            if (result.output_filepath) {
-                PANIC("Output file path was already set");
-            }
-            result.output_filepath = token.args.front();
-        }
-        break;
-
-        case CHAIN_TOKEN_END:
-        default: {
-            assert(0 && "unreachable");
-            exit(1);
-        }
-        }
-    };
-
-    process_token(first);
-
-    va_list args;
-    va_start(args, first);
-    Chain_Token next = va_arg(args, Chain_Token);
-    while (next.type != CHAIN_TOKEN_END) {
-        process_token(next);
-        next = va_arg(args, Chain_Token);
-    }
-    va_end(args);
-
-    return result;
-}
-
-void chain_run_sync(const Chain &chain)
-{
-    if (chain.cmds.empty()) {
-        return;
-    }
-
-    std::vector<Pid> cpids;
-    cpids.reserve(chain.cmds.size());
-
-    Fd fdin = -1;
-    if (chain.input_filepath) {
-        fdin = fd_open_for_read(chain.input_filepath->c_str());
-    }
-
-    for (size_t i = 0; i < chain.cmds.size(); ++i) {
-        Fd* fdin_ptr = (fdin != -1) ? &fdin : nullptr;
-        bool is_last = (i == chain.cmds.size() - 1);
-
-        if (is_last) {
-            Fd fdout = -1;
-            if (chain.output_filepath) {
-                fdout = fd_open_for_write(chain.output_filepath->c_str());
-            }
-            Fd* fdout_ptr = (fdout != -1) ? &fdout : nullptr;
-
-            cpids.push_back(cmd_run_async(chain.cmds[i], fdin_ptr, fdout_ptr));
-
-            if (fdin != -1) close(fdin);
-            if (fdout != -1) close(fdout);
-        } else {
-            int pipefd[2];
-            if (pipe(pipefd) < 0) {
-                PANIC("Could not create pipe: %s", strerror(errno));
-            }
-            Fd read_end = pipefd[0];
-            Fd write_end = pipefd[1];
-
-            cpids.push_back(cmd_run_async(chain.cmds[i], fdin_ptr, &write_end));
-
-            if (fdin != -1) close(fdin);
-            close(write_end);
-            fdin = read_end;
-        }
-    }
-
-    for (const auto &cpid : cpids) {
-        pid_wait(cpid);
-    }
-}
-
-void chain_echo(const Chain &chain)
-{
-    std::cout << "[INFO] CHAIN:";
-    if (chain.input_filepath) {
-        std::cout << " " << *chain.input_filepath;
-    }
-
-    for (const auto &cmd : chain.cmds) {
-        std::cout << " |> " << cmd_show(cmd);
-    }
-
-    if (chain.output_filepath) {
-        std::cout << " |> " << *chain.output_filepath;
-    }
-
-    std::cout << std::endl;
-}
-
-std::string path_get_current_dir()
-{
-    std::error_code ec;
-    auto path = std::filesystem::current_path(ec);
-    if (ec) {
-        PANIC("could not get current directory: %s", ec.message().c_str());
-    }
-    return path.string();
-}
-
-void path_set_current_dir(const char* path)
-{
-    std::error_code ec;
-    std::filesystem::current_path(path, ec);
-    if (ec) {
-        PANIC("could not set current directory to %s: %s",
-              path, ec.message().c_str());
-    }
-}
-
-bool path_exists(const char* path)
-{
-    std::error_code ec;
-    bool result = std::filesystem::exists(path, ec);
-    if (ec) {
-        PANIC("could not check existence of path %s: %s", path, ec.message().c_str());
-    }
-    return result;
-}
-
-bool path_is_dir(const char* path)
-{
-    std::error_code ec;
-    bool result = std::filesystem::is_directory(path, ec);
-    if (ec) {
-        if (ec.value() == ENOENT) {
-            return false;
-        }
-        PANIC("could not check if path %s is a directory: %s", path, ec.message().c_str());
-    }
-    return result;
-}
-
 void path_rename(const char* old_path, const char* new_path)
 {
     std::error_code ec;
     std::filesystem::rename(old_path, new_path, ec);
     if (ec) {
         PANIC("could not rename %s to %s: %s", old_path, new_path, ec.message().c_str());
-    }
-}
-
-void path_mkdirs(const Cstr_Array &path)
-{
-    std::filesystem::path p;
-    for(const auto& part : path) {
-        p /= part;
-    }
-
-    if (p.empty()) {
-        return;
-    }
-
-    std::error_code ec;
-    std::filesystem::create_directories(p, ec);
-    if (ec) {
-        PANIC("could not create directories %s: %s", p.c_str(), ec.message().c_str());
-    }
-}
-
-void path_rm(const char* path)
-{
-    std::error_code ec;
-    std::filesystem::remove_all(path, ec);
-    if (ec) {
-        PANIC("could not remove %s: %s", path, ec.message().c_str());
     }
 }
 
