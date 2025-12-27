@@ -17,5 +17,5 @@ jobs:
 
       - name: Build & Test
         run: |
-          g++ -std=c++20 -ggdb -fsanitize=address,pointer-overflow,signed-integer-overflow,undefined -o nob nob.cpp
+          g++ -std=c++23 -fsanitize=address,undefined -fsanitize-address-use-after-scope -D_GLIBCXX_DEBUG -o nob nob.cpp
           ./nob

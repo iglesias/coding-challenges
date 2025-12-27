@@ -23,13 +23,13 @@ template<size_t N> auto make_cmd(const std::array<std::string_view, N>& strings)
     Cmd cmd;
     cmd.line.reserve(strings.size());
     for (size_t i = 0; i < N; i++) cmd.line.push_back(std::string{strings[i]});
+    INFO("make_cmd: %s", cmd_show(cmd).c_str());
     return cmd;
 }
 
 template<size_t N> void make_and_run_cmd(const std::array<std::string_view, N>& strings)
 {
     const auto& cmd = make_cmd(strings);
-    INFO("make_and_run_cmd: %s", cmd_show(cmd).c_str());
     cmd_run_sync(cmd);
 }
 
