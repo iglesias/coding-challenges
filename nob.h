@@ -50,28 +50,28 @@ typedef int Fd;
 #include <system_error>
 #include <vector>
 
-
-using Cstr_Array = std::vector<std::string>;
+using std::string;
+using std::vector;
 
 std::string cstr_no_ext(const char* path);
 #define NOEXT(path) cstr_no_ext(path)
 
 template<typename... Args>
-Cstr_Array cstr_array_make(Args... args)
+vector<string> cstr_array_make(Args... args)
 {
-    Cstr_Array result;
+    vector<string> result;
     (result.emplace_back(args), ...);
     return result;
 }
-Cstr_Array cstr_array_from_int_char(int argc, char** argv);
-std::string cstr_array_join(const char* sep, const Cstr_Array &cstrs);
+vector<string> cstr_array_from_int_char(int argc, char** argv);
+std::string cstr_array_join(const char* sep, const vector<string> &cstrs);
 
 #define JOIN(sep, ...) cstr_array_join(sep, cstr_array_make(__VA_ARGS__))
 #define CONCAT(...) JOIN("", __VA_ARGS__)
 #define PATH(...) JOIN(PATH_SEP, __VA_ARGS__)
 
 typedef struct {
-    Cstr_Array line;
+    vector<string> line;
 } Cmd;
 
 std::string cmd_show(const Cmd &cmd);
@@ -92,8 +92,9 @@ typedef std::vector<Cmd> Cmd_Array;
         cmd_run_sync(cmd);                              \
     } while (0)
 
+// TODO: make common with nob workflow
 #ifndef REBUILD_URSELF
-#  define REBUILD_URSELF(binary_path, source_path) CMD("g++", "-std=c++20", "-o", binary_path, source_path)
+#  define REBUILD_URSELF(binary_path, source_path) CMD("g++", "-std=c++23", "-fsanitize=address,undefined", "-fsanitize-address-use-after-scope -D_GLIBCXX_DEBUG",  "-o", binary_path, source_path)
 #endif
 
 // Go Rebuild Urself™ Technology
@@ -164,9 +165,9 @@ void PANIC(const char* fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 #ifdef NOBUILD_IMPLEMENTATION
 
-Cstr_Array cstr_array_from_int_char(int argc, char** argv)
+vector<string> cstr_array_from_int_char(int argc, char** argv)
 {
-    Cstr_Array result;
+    vector<string> result;
     for (int i = 0; i < argc; ++i) {
         result.push_back(argv[i]);
     }
@@ -183,7 +184,7 @@ std::string cstr_no_ext(const char* path)
     return std::string(p);
 }
 
-std::string cstr_array_join(const char* sep, const Cstr_Array &cstrs)
+std::string cstr_array_join(const char* sep, const vector<string> &cstrs)
 {
     std::stringstream ss;
     for (size_t i = 0; i < cstrs.size(); ++i) {
