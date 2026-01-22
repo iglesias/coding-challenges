@@ -1,0 +1,2 @@
+g++ src/Trace.cpp src/VisNode.cpp src/main.cpp
+gcc -shared src/plug.c -IcJSON -Ipanim/thirdparty/raylib-5.0_linux_amd64/include -Ipanim/panim -Ipanim/plugs/tm -o libtree.so

@@ -1,0 +1,2 @@
+git clone git@github.com:DaveGamble/cJSON.git --depth 1
+git clone git@github.com:iglesias/panim.git --depth 1
