@@ -2,8 +2,10 @@
 #include <bitset>
 #include <cassert>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <queue>
+#include <stdexcept>
 #include <unordered_set>
 
 #include <boost/functional/hash.hpp>
@@ -17,6 +19,18 @@ struct symbol {
     }
     bool operator==(symbol const& that) const {
       return id == that.id && negative == that.negative;
+    }
+    bool operator==(char c) const {
+        switch (c) {
+        case 'a':
+            return id == std::bitset<2>(0);
+        case 'b':
+            return id == std::bitset<2>(1);
+        case 'c':
+            return id == std::bitset<2>(2);
+        default:
+            throw std::invalid_argument("Invalid character for symbol. It isn't one of a, b, or c.");
+        }
     }
 };
 
@@ -48,6 +62,11 @@ void print(std::array<symbol, 3> const& a) {
     }
 }
 
+void print(std::array<std::array<int, 3>, 3> matrix) {
+    for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++)
+        std::cout << std::setw(2) << matrix.at(i).at(j) << (j == 2 ? "\n" : " ");
+}
+
 // [ 1       0          0     ]
 // [ 0  cos(alpha) sin(alpha) ]
 // [ 0 -sin(alpha) cos(alpha) ]
@@ -75,15 +94,8 @@ template<typename T> void Rz(std::array<T, 3>& v) {
     v[1] = -backup;
 }
 
-void rotation_vector_mapping(std::array<symbol, 3> const& vector, std::array<symbol, 3> const& item) {
-    //TODO a goes to this position negated or not
-    //     b goes to that ...
-    //     c goes to ...
-}
-
-void generate_rotations() {
-    // vector [a b c]^T is used as "canonical".
-    std::array<symbol, 3> const vector = [](){
+// vector [a b c]^T is used as "canonical".
+std::array<symbol, 3> const vector = [](){
         std::array<symbol, 3> vector;
         vector.at(0).id = 0, vector.at(0).negative = false;
         vector.at(1).id = 1, vector.at(1).negative = false;
@@ -91,6 +103,7 @@ void generate_rotations() {
         return vector;
     }();
 
+auto generate_rotations() {
     std::unordered_set<std::array<symbol, 3>, boost::hash<std::array<symbol, 3>>> Qed;
     Qed.insert(vector);
     std::queue<std::array<symbol, 3>> Q;
@@ -110,14 +123,30 @@ void generate_rotations() {
         g(v, Ry<symbol>);
         g(v, Rz<symbol>);
     }
-    for (auto const& item : Qed) {
-        print(item);
-        std::cout << '\n';
-        rotation_vector_mapping(vector, item);
-    }
     if (Qed.size() != 24) throw std::runtime_error("Unexpected #rotations.");
+    return Qed;
+}
+
+auto rotation_vector_mapping(std::array<symbol, 3> const& item) {
+    auto find_symbol_position = [](auto const& item, char c){
+        for (int pos = 0; pos < 3; pos++) if (item.at(pos) == c) return pos;
+        throw std::runtime_error("Symbol not found.");
+    };
+
+    std::array<std::array<int, 3>, 3> matrix;
+    matrix.fill(std::array<int, 3>{0, 0, 0});
+    for (int offset = 0; offset < 3; offset++) {
+        int const pos = find_symbol_position(item, 'a'+offset);
+        matrix.at(offset).at(pos) = item.at(pos).negative ? -1 : 1;
+    }
+    return matrix;
 }
 
 int main() {
-    generate_rotations();
+    auto const rotations = generate_rotations();
+    for (auto const& item : rotations) {
+        auto const matrix = rotation_vector_mapping(item);
+        std::cout << "To go from"; print(vector); std::cout << "to "; print(item);
+        std::cout << "\n"; print(matrix);
+    }
 }
