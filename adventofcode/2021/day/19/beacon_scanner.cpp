@@ -1,12 +1,17 @@
 #include <array>
 #include <bitset>
 #include <cassert>
+#include <flat_set>
+#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <iostream>
 #include <queue>
 #include <stdexcept>
+#include <string>
+#include <tuple>
 #include <unordered_set>
+#include <vector>
 
 #include <boost/functional/hash.hpp>
 
@@ -142,11 +147,67 @@ auto rotation_vector_mapping(std::array<symbol, 3> const& item) {
     return matrix;
 }
 
+auto read_scan_report(std::string const& scan_report_fname) {
+    std::ifstream scan_file(scan_report_fname);
+    std::string line;
+    std::vector<std::array<int, 3>> scan_report;
+    for (;;) {
+        std::getline(scan_file, line);
+        if (line.empty()) break;
+        auto const p = line.find(',');
+        int const x = std::stoi(line.substr(0, p));
+        auto const q = line.find(',', p+1);
+        int const y = std::stoi(line.substr(p+1, q-p));
+        int const z = std::stoi(line.substr(q+1));
+        scan_report.push_back({x, y, z});
+    }
+    return scan_report;
+}
+
 int main() {
     auto const rotations = generate_rotations();
-    for (auto const& item : rotations) {
-        auto const matrix = rotation_vector_mapping(item);
-        std::cout << "To go from"; print(vector); std::cout << "to "; print(item);
-        std::cout << "\n"; print(matrix);
+    std::vector<std::array<int, 3>> scan0 = read_scan_report("scan0.txt");
+    std::vector<std::array<int, 3>> scan1 = read_scan_report("scan1.txt");
+
+    for (size_t i = 0; i < scan0.size(); i++) for (size_t j = 0; j < scan1.size(); j++) {
+        for (auto const& item : rotations) {
+            auto const matrix = rotation_vector_mapping(item);
+            // Apply matrix to scan1[j]
+            auto matmul = [&](int r, size_t idx1){
+                int c = 0;
+                for (int k = 0; k < 3; k++) c += matrix.at(r).at(k) * scan1.at(idx1).at(k);
+                return c;
+            };
+            auto const x1 = matmul(0, j);
+            auto const y1 = matmul(1, j);
+            auto const z1 = matmul(2, j);
+            // Compute shift from scan1[j] and scan0[i]
+            auto const dx = x1 - scan0.at(i).at(0);
+            auto const dy = y1 - scan0.at(i).at(1);
+            auto const dz = z1 - scan0.at(i).at(2);
+            // Assertion:
+            assert(scan0[i] == std::make_tuple(x1-dx, y1-dy, z1-dz));
+            // Count the number of points in scan1 that after rotating and shifting 
+            // are points in scan0
+            std::flat_set<std::tuple<int, int, int>> scan0set;
+            for (size_t ii = 0; ii < scan0.size(); ii++) {
+                if (ii == i) continue;
+                scan0set.insert(scan0.at(ii));
+            }
+            int matches_count = 1; // starting from 1 because scan1[j]'s been placed at scan0[i]
+            for (size_t jj = 0; jj < scan1.size(); jj++) {
+                if (jj == j) continue;
+                auto const xjj = matmul(0, jj);
+                auto const yjj = matmul(1, jj);
+                auto const zjj = matmul(2, jj);
+                auto const p = std::make_tuple(xjj-dx, yjj-dy, zjj-dz);
+                if (scan0set.contains(p)) {
+                    matches_count += 1;
+                    scan0set.erase(p);
+                }
+                if (matches_count == 12) break;
+            }
+            if (matches_count == 12) std::cout << "Overlap found!\n";
+        }
     }
 }
