@@ -2,10 +2,10 @@
 #include <bitset>
 #include <cassert>
 #include <flat_set>
-#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <print>
 #include <queue>
 #include <stdexcept>
 #include <string>
@@ -147,12 +147,11 @@ auto rotation_vector_mapping(std::array<symbol, 3> const& item) {
     return matrix;
 }
 
-auto read_scan_report(std::string const& scan_report_fname) {
-    std::ifstream scan_file(scan_report_fname);
+auto read_scan_report(std::istream& input_stream) {
     std::string line;
     std::vector<std::array<int, 3>> scan_report;
     for (;;) {
-        std::getline(scan_file, line);
+        std::getline(input_stream, line);
         if (line.empty()) break;
         auto const p = line.find(',');
         int const x = std::stoi(line.substr(0, p));
@@ -164,12 +163,29 @@ auto read_scan_report(std::string const& scan_report_fname) {
     return scan_report;
 }
 
+auto read_input() {
+    std::vector<std::vector<std::array<int, 3>>> scans;
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        //assert(line.substr(0, 12) == "--- scanner ");
+        scans.push_back(read_scan_report(std::cin));
+    }
+    return scans;
+}
+
 int main() {
     auto const rotations = generate_rotations();
-    std::vector<std::array<int, 3>> scan0 = read_scan_report("scan0.txt");
-    std::vector<std::array<int, 3>> scan1 = read_scan_report("scan1.txt");
 
-    for (size_t i = 0; i < scan0.size(); i++) for (size_t j = 0; j < scan1.size(); j++) {
+    auto const scans = read_input();
+
+    for (size_t scan_idx_i = 0; scan_idx_i < scans.size(); scan_idx_i++) {
+    for (size_t scan_idx_j = scan_idx_i + 1; scan_idx_j < scans.size(); scan_idx_j++) {
+
+    auto const& scan0 = scans.at(scan_idx_i);
+    auto const& scan1 = scans.at(scan_idx_j);
+
+    bool overlap_found = false;
+    for (size_t i = 0; i < scan0.size() && !overlap_found; i++) for (size_t j = 0; j < scan1.size() && !overlap_found; j++) {
         for (auto const& item : rotations) {
             auto const matrix = rotation_vector_mapping(item);
             // Apply matrix to scan1[j]
@@ -195,6 +211,8 @@ int main() {
                 scan0set.insert(scan0.at(ii));
             }
             int matches_count = 1; // starting from 1 because scan1[j]'s been placed at scan0[i]
+            std::vector<std::tuple<int, int, int>> matches;
+            matches.push_back(scan0.at(i));
             for (size_t jj = 0; jj < scan1.size(); jj++) {
                 if (jj == j) continue;
                 auto const xjj = matmul(0, jj);
@@ -204,10 +222,24 @@ int main() {
                 if (scan0set.contains(p)) {
                     matches_count += 1;
                     scan0set.erase(p);
+                    matches.push_back(p);
                 }
                 if (matches_count == 12) break;
             }
-            if (matches_count == 12) std::cout << "Overlap found!\n";
+            if (matches_count == 12) {
+                std::println("{:2} overlaps with {:2}", scan_idx_i, scan_idx_j);
+                overlap_found = true;
+                /*
+                for (auto const& match : matches) {
+                    std::print("  {}\n", match);
+                }
+                */
+                break;
+            }
         }
     }
+
+    }
+    }
+}
 }
