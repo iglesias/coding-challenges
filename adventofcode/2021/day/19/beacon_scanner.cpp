@@ -39,6 +39,11 @@ struct symbol {
     }
 };
 
+struct transformation {
+    std::array<std::array<int, 3>, 3> rotation;
+    std::array<int, 3> translation;
+};
+
 std::size_t hash_value(symbol const& s) {
     return s.id.to_ullong() ^ s.negative;
 }
@@ -173,10 +178,15 @@ auto read_input() {
     return scans;
 }
 
+int const mininum_overlapping_beacons = 12;
+
 int main() {
     auto const rotations = generate_rotations();
 
     auto const scans = read_input();
+
+    std::unordered_map<int, std::unordered_map<int, transformation>> A;
+    std::unordered_map<int, std::vector<int>> B;
 
     for (size_t scan_idx_i = 0; scan_idx_i < scans.size(); scan_idx_i++) {
     for (size_t scan_idx_j = scan_idx_i + 1; scan_idx_j < scans.size(); scan_idx_j++) {
@@ -211,8 +221,8 @@ int main() {
                 scan0set.insert(scan0.at(ii));
             }
             int matches_count = 1; // starting from 1 because scan1[j]'s been placed at scan0[i]
-            std::vector<std::tuple<int, int, int>> matches;
-            matches.push_back(scan0.at(i));
+            std::vector<std::pair<std::tuple<int, int, int>, std::tuple<int, int, int>>> matches;
+            matches.emplace_back(scan0.at(i), scan1.at(j));
             for (size_t jj = 0; jj < scan1.size(); jj++) {
                 if (jj == j) continue;
                 auto const xjj = matmul(0, jj);
@@ -222,24 +232,48 @@ int main() {
                 if (scan0set.contains(p)) {
                     matches_count += 1;
                     scan0set.erase(p);
-                    matches.push_back(p);
+                    matches.emplace_back(p, scan1.at(jj));
                 }
-                if (matches_count == 12) break;
+                if (matches_count == mininum_overlapping_beacons) break;
             }
-            if (matches_count == 12) {
-                std::println("{:2} overlaps with {:2}", scan_idx_i, scan_idx_j);
+            if (matches_count == mininum_overlapping_beacons) {
                 overlap_found = true;
-                /*
-                for (auto const& match : matches) {
-                    std::print("  {}\n", match);
+                A[scan_idx_i][scan_idx_j] = {matrix, {dx, dy, dz}};
+                B[scan_idx_i].push_back(scan_idx_j);
+                B[scan_idx_j].push_back(scan_idx_i);
+                std::println("{} -> {}:", scan_idx_i, scan_idx_j);
+                std::println("{}", A[scan_idx_i][scan_idx_j].rotation);
+                std::println("{}\n", A[scan_idx_i][scan_idx_j].translation);
+                if (scan_idx_i == 0 && scan_idx_j == 1) {
+                    std::println("Beacons relative to scanner 0:");
+                    for (auto const& pq : matches) std::println("  {}", pq.first);
+                    std::println("Beacons relative to scanner 1:");
+                    for (auto const& pq : matches) std::println("  {}", pq.second);
+                    std::println("Scanner 1 is at {}.", A[0][1].translation); // appears negated
                 }
-                */
                 break;
             }
         }
     }
 
     }
+    }
+
+    // Is there more than one connected component?
+    {
+        std::unordered_set<int> c;
+        std::queue<int> d;
+        c.insert(0);
+        d.push(0);
+        while (!d.empty()) {
+            int const n = d.front();
+            d.pop();
+            for (int const m : B[n]) if (!c.contains(m)) {
+                c.insert(m);
+                d.push(m);
+            }
+        }
+        std::println("scans size: {}, #CC: {}", scans.size(), c.size());
     }
 }
 }
