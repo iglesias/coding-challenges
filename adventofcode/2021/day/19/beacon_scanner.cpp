@@ -308,10 +308,9 @@ int main() {
                         std::println("0");
 
                         // Validating on sample input:
-                        int const scan_idx_inspected = 2;
-                        if (scan_idx == scan_idx_inspected) {
+                        {
                             math::vector<int> p{0,0,0};
-                            int from = scan_idx_inspected;
+                            int from = scan_idx;
                             for (size_t path_idx = 0; path_idx <= path.size(); path_idx++) {
                                 int const to = path_idx == path.size() ? 0 : path[path_idx];
                                 std::print("  From {} to {}: ", from, to);
