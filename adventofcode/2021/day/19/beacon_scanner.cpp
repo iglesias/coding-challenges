@@ -43,12 +43,12 @@ namespace math {
 
 constexpr int dim = 3;
 template<typename T> using vector = std::array<T, dim>;
-template<typename T> using matrix = std::array<vector<T>, dim>;
+using matrix = std::array<vector<int>, dim>;
 
 };
 
 struct transformation {
-    math::matrix<int> rotation;
+    math::matrix rotation;
     math::vector<int> translation;
 };
 
@@ -80,7 +80,7 @@ void print(math::vector<symbol> const& a) {
     }
 }
 
-void print(math::matrix<int> A) {
+void print(math::matrix A) {
     for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++)
         std::cout << std::setw(2) << A.at(i).at(j) << (j == 2 ? "\n" : " ");
 }
@@ -151,7 +151,7 @@ auto rotation_vector_mapping(std::array<symbol, 3> const& item) {
         throw std::runtime_error("Symbol not found.");
     };
 
-    math::matrix<int> rotation;
+    math::matrix rotation;
     rotation.fill(std::array<int, 3>{0, 0, 0});
     for (int offset = 0; offset < 3; offset++) {
         int const pos = find_symbol_position(item, 'a'+offset);
@@ -188,7 +188,7 @@ auto read_input() {
 
 int const mininum_overlapping_beacons = 12;
 
-auto operator*(math::matrix<int> const& A, math::vector<int> const& v) {
+auto operator*(math::matrix const& A, math::vector<int> const& v) {
     auto matmul = [A, v](int r){
         int c = 0;
         for (int k = 0; k < 3; k++) c += A.at(r).at(k) * v.at(k);
@@ -316,24 +316,21 @@ int main() {
                                 std::print("  From {} to {}: ", from, to);
                                 if (A.contains(from) && A.at(from).contains(to)) {
                                     std::println("direct");
-                                    //std::array<std::array<int, 3>, 3> inverse;
-                                    //for (int r = 0; r < 3; r++) for (int c = 0; c < 3; c++)
-                                    //    inverse[r][c] = A[from][to].rotation[c][r];
-                                    // rotate
-                                    //auto const [x, y, z] = matvecmul(inverse, p);
-                                    //auto const [x, y, z] = matvecmul(A[from][to].rotation, p);
-                                    auto const [x, y, z] = A[from][to].rotation * p;
-                                    p[0] = x, p[1] = y, p[2] = z;
                                     // translate
                                     for (int c = 0; c < 3; c++) {
-                                        p[c] += A[from][to].translation[c];
+                                        p[c] -= A[from][to].translation[c];
                                     }
+                                    math::matrix inverse;
+                                    for (int r = 0; r < 3; r++) for (int c = 0; c < 3; c++) {
+                                        inverse[r][c] = A[from][to].rotation[c][r];
+                                    }
+                                    // rotate
+                                    auto const [x, y, z] = A[from][to].rotation * p;
+                                    p[0] = x, p[1] = y, p[2] = z;
                                 } else {
                                     assert(A.contains(to) && A[to].contains(from));
                                     std::println("inverse");
                                     // rotate
-                                    //auto const [x, y, z] = matvecmul(inverse, p);
-                                    //auto const [x, y, z] = matvecmul(A[to][from].rotation, p);
                                     auto const [x, y, z] = A[to][from].rotation * p;
                                     p[0] = x, p[1] = y, p[2] = z;
                                     // translate
