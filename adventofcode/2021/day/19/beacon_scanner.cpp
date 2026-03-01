@@ -348,6 +348,7 @@ int main() {
                         path.push_back(neighbor);
                         Qed.insert(neighbor);
                         Q.emplace(neighbor, path);
+                        path.pop_back();
                     }
                 }
             }
