@@ -1,7 +1,8 @@
-// g++ -std=c++17 -I${ftxui}/include -L${ftxui}/build minimal.cpp -lftxui-component -lftxui-dom -lftxui-screen -o minimal -I{googletest}/include -L{googletest}/lib -lgtest
+// g++ -std=c++17 -I${ftxui}/include -L${ftxui}/build sinc.cpp -lftxui-component -lftxui-dom -lftxui-screen -o sinc -I{googletest}/include -L{googletest}/lib -lgtest
 // https://stackoverflow.com/questions/78284124/configuring-a-project-with-ftxui-in-visual-studio-code
 
 #include <cmath>
+#include <cstring>
 #include <thread>
 #include <variant>
 #include <vector>
@@ -39,14 +40,11 @@ auto make_samples_vector(WaveSampleFormat wsf) -> variant_vector {
     default:
       throw std::runtime_error("Unexpected sample format!");
   }
-  unreachable();
 }
 
 struct Wave {
   std::vector<std::byte> data;
   int wave_sample_size = 0;
-
-  Wave() {}
 
   Wave(WaveSampleFormat wsf) {
     wave_sample_size = [wsf]() {
@@ -56,6 +54,7 @@ struct Wave {
       case WaveSampleFormat::F64:
         return 8;
     }
+    unreachable();
     }();
   }
 
