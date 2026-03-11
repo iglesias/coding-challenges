@@ -294,13 +294,11 @@ int main() {
             Q.emplace(scan_idx, std::vector<int>{});
             std::unordered_set<int> Qed;
             Qed.insert(scan_idx);
-            bool scan0_found = false;
             while (!Q.empty()) {
                 auto [node, path] = Q.front();
                 Q.pop();
                 for (int const neighbor : neighbors[node]) if (!Qed.contains(neighbor)) {
                     if (neighbor == 0) {
-                        scan0_found = true;
                         std::print("{} -> ", scan_idx);
                         for (int const intermediate_node : path) {
                             std::print("{} -> ", intermediate_node);
@@ -325,7 +323,7 @@ int main() {
                                         inverse[r][c] = A[from][to].rotation[c][r];
                                     }
                                     // rotate
-                                    auto const [x, y, z] = A[from][to].rotation * p;
+                                    auto const [x, y, z] = inverse * p;
                                     p[0] = x, p[1] = y, p[2] = z;
                                 } else {
                                     assert(A.contains(to) && A[to].contains(from));
