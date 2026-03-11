@@ -162,7 +162,7 @@ auto rotation_vector_mapping(std::array<symbol, 3> const& item) {
 
 auto read_scan_report(std::istream& input_stream) {
     std::string line;
-    std::vector<std::array<int, 3>> scan_report;
+    std::vector<math::vector<int>> scan_report;
     for (;;) {
         std::getline(input_stream, line);
         if (line.empty()) break;
@@ -177,7 +177,7 @@ auto read_scan_report(std::istream& input_stream) {
 }
 
 auto read_input() {
-    std::vector<std::vector<std::array<int, 3>>> scans;
+    std::vector<std::vector<math::vector<int>>> scans;
     std::string line;
     while (std::getline(std::cin, line)) {
         //assert(line.substr(0, 12) == "--- scanner ");
@@ -287,6 +287,13 @@ int main() {
     std::println();
     */
 
+    std::flat_set<std::tuple<int, int, int>> pointsAt0;
+    for (auto const& p : scans.at(0)) {
+        pointsAt0.emplace(p.at(0), p.at(1), p.at(2));
+    }
+
+    std::vector<math::vector<int>> scanners_positions(scans.size());
+    scanners_positions.at(0) = {0, 0, 0};
     // Paths to scan0:
     {
         for (size_t scan_idx = 1; scan_idx < scans.size(); scan_idx++) {
@@ -339,6 +346,41 @@ int main() {
                                 from = to;
                             }
                             std::println("Scanner {} is at {}", scan_idx, p);
+                            scanners_positions.at(scan_idx) = p;
+                        }
+
+                        {
+                            for (auto const& pconst : scans.at(scan_idx)) {
+                            auto p = pconst;
+                            int from = scan_idx;
+                            for (size_t path_idx = 0; path_idx <= path.size(); path_idx++) {
+                                int const to = path_idx == path.size() ? 0 : path[path_idx];
+                                if (A.contains(from) && A.at(from).contains(to)) {
+                                    // translate
+                                    for (int c = 0; c < 3; c++) {
+                                        p[c] -= A[from][to].translation[c];
+                                    }
+                                    math::matrix inverse;
+                                    for (int r = 0; r < 3; r++) for (int c = 0; c < 3; c++) {
+                                        inverse[r][c] = A[from][to].rotation[c][r];
+                                    }
+                                    // rotate
+                                    auto const [x, y, z] = inverse * p;
+                                    p[0] = x, p[1] = y, p[2] = z;
+                                } else {
+                                    assert(A.contains(to) && A[to].contains(from));
+                                    // rotate
+                                    auto const [x, y, z] = A[to][from].rotation * p;
+                                    p[0] = x, p[1] = y, p[2] = z;
+                                    // translate
+                                    for (int c = 0; c < 3; c++) {
+                                        p[c] += A[to][from].translation[c];
+                                    }
+                                }
+                                from = to;
+                            }
+                            pointsAt0.emplace(p.at(0), p.at(1), p.at(2));
+                            }
                         }
 
                         break;
@@ -351,6 +393,19 @@ int main() {
                 }
             }
         }
+        std::println("In total, there are {} beacons.", pointsAt0.size());
+        //for (auto const& point : pointsAt0) std::println("{}", point);
     }
+
+    int part_two_ans = 0;
+    for (size_t scanner_idx_i = 0; scanner_idx_i < scanners_positions.size(); scanner_idx_i++) {
+        for (size_t scanner_idx_j = scanner_idx_i+1; scanner_idx_j < scanners_positions.size(); scanner_idx_j++) {
+            part_two_ans = std::max(part_two_ans,
+                    std::abs(scanners_positions.at(scanner_idx_i).at(0) - scanners_positions.at(scanner_idx_j).at(0)) +
+                    std::abs(scanners_positions.at(scanner_idx_i).at(1) - scanners_positions.at(scanner_idx_j).at(1)) +
+                    std::abs(scanners_positions.at(scanner_idx_i).at(2) - scanners_positions.at(scanner_idx_j).at(2)));
+        }
+    }
+    std::println("In total, they are {} units apart.", part_two_ans);
 }
 }
