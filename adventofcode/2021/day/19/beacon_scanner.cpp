@@ -154,7 +154,7 @@ auto rotation_vector_mapping(std::array<symbol, 3> const& item) {
     math::matrix rotation;
     rotation.fill(std::array<int, 3>{0, 0, 0});
     for (int offset = 0; offset < 3; offset++) {
-        int const pos = find_symbol_position(item, 'a'+offset);
+        int const pos = find_symbol_position(item, 'a'+static_cast<char>(offset));
         rotation.at(offset).at(pos) = item.at(pos).negative ? -1 : 1;
     }
     return rotation;
@@ -202,8 +202,8 @@ int main() {
 
     auto const scans = read_input();
 
-    std::unordered_map<int, std::unordered_map<int, transformation>> A;
-    std::unordered_map<int, std::vector<int>> neighbors;
+    std::unordered_map<size_t, std::unordered_map<size_t, transformation>> A;
+    std::unordered_map<size_t, std::vector<size_t>> neighbors;
 
     for (size_t scan_idx_i = 0; scan_idx_i < scans.size(); scan_idx_i++) {
     for (size_t scan_idx_j = scan_idx_i + 1; scan_idx_j < scans.size(); scan_idx_j++) {
@@ -297,17 +297,17 @@ int main() {
     // Paths to scan0:
     {
         for (size_t scan_idx = 1; scan_idx < scans.size(); scan_idx++) {
-            std::queue<std::pair</* node state */ int, /* state of the path to scan0 */ std::vector<int>>> Q;
-            Q.emplace(scan_idx, std::vector<int>{});
-            std::unordered_set<int> Qed;
+            std::queue<std::pair</* node state */ size_t, /* state of the path to scan0 */ std::vector<size_t>>> Q;
+            Q.emplace(scan_idx, std::vector<size_t>{});
+            std::unordered_set<size_t> Qed;
             Qed.insert(scan_idx);
             while (!Q.empty()) {
                 auto [node, path] = Q.front();
                 Q.pop();
-                for (int const neighbor : neighbors[node]) if (!Qed.contains(neighbor)) {
+                for (auto const neighbor : neighbors[node]) if (!Qed.contains(neighbor)) {
                     if (neighbor == 0) {
                         std::print("{} -> ", scan_idx);
-                        for (int const intermediate_node : path) {
+                        for (auto const intermediate_node : path) {
                             std::print("{} -> ", intermediate_node);
                         }
                         std::println("0");
@@ -315,9 +315,9 @@ int main() {
                         // Validating on sample input:
                         {
                             math::vector<int> p{0,0,0};
-                            int from = scan_idx;
+                            auto from = scan_idx;
                             for (size_t path_idx = 0; path_idx <= path.size(); path_idx++) {
-                                int const to = path_idx == path.size() ? 0 : path[path_idx];
+                                auto const to = path_idx == path.size() ? 0 : path[path_idx];
                                 std::print("  From {} to {}: ", from, to);
                                 if (A.contains(from) && A.at(from).contains(to)) {
                                     std::println("direct");
@@ -352,9 +352,9 @@ int main() {
                         {
                             for (auto const& pconst : scans.at(scan_idx)) {
                             auto p = pconst;
-                            int from = scan_idx;
+                            auto from = scan_idx;
                             for (size_t path_idx = 0; path_idx <= path.size(); path_idx++) {
-                                int const to = path_idx == path.size() ? 0 : path[path_idx];
+                                auto const to = path_idx == path.size() ? 0 : path[path_idx];
                                 if (A.contains(from) && A.at(from).contains(to)) {
                                     // translate
                                     for (int c = 0; c < 3; c++) {
