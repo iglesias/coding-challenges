@@ -1,7 +1,6 @@
 #include <array>
 #include <bitset>
 #include <cassert>
-#include <flat_set>
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -10,10 +9,10 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
-#include <unordered_set>
 #include <vector>
 
 #include <boost/functional/hash.hpp>
+#include <boost/unordered/unordered_flat_set.hpp>
 
 struct symbol {
     std::bitset<2> id;
@@ -122,7 +121,7 @@ std::array<symbol, 3> const v = [](){
     }();
 
 auto generate_rotations() {
-    std::unordered_set<std::array<symbol, 3>, boost::hash<std::array<symbol, 3>>> Qed;
+    boost::unordered::unordered_flat_set<std::array<symbol, 3>> Qed;
     Qed.insert(v);
     std::queue<std::array<symbol, 3>> Q;
     Q.push(v);
@@ -225,7 +224,7 @@ int main() {
             assert(scan0[i] == std::make_tuple(x1-dx, y1-dy, z1-dz));
             // Count the number of points in scan1 that after rotating and shifting 
             // are points in scan0
-            std::flat_set<std::tuple<int, int, int>> scan0set;
+            boost::unordered::unordered_flat_set<std::tuple<int, int, int>> scan0set;
             for (size_t ii = 0; ii < scan0.size(); ii++) {
                 if (ii == i) continue;
                 scan0set.insert(scan0.at(ii));
@@ -287,10 +286,8 @@ int main() {
     std::println();
     */
 
-    std::flat_set<std::tuple<int, int, int>> pointsAt0;
-    for (auto const& p : scans.at(0)) {
-        pointsAt0.emplace(p.at(0), p.at(1), p.at(2));
-    }
+    boost::unordered::unordered_flat_set<std::tuple<int, int, int>> pointsAt0;
+    for (auto const& p : scans.at(0)) pointsAt0.emplace(p.at(0), p.at(1), p.at(2));
 
     std::vector<math::vector<int>> scanners_positions(scans.size());
     scanners_positions.at(0) = {0, 0, 0};
@@ -299,7 +296,7 @@ int main() {
         for (size_t scan_idx = 1; scan_idx < scans.size(); scan_idx++) {
             std::queue<std::pair</* node state */ size_t, /* state of the path to scan0 */ std::vector<size_t>>> Q;
             Q.emplace(scan_idx, std::vector<size_t>{});
-            std::unordered_set<size_t> Qed;
+            boost::unordered::unordered_flat_set<size_t> Qed;
             Qed.insert(scan_idx);
             while (!Q.empty()) {
                 auto [node, path] = Q.front();
@@ -394,7 +391,6 @@ int main() {
             }
         }
         std::println("In total, there are {} beacons.", pointsAt0.size());
-        //for (auto const& point : pointsAt0) std::println("{}", point);
     }
 
     int part_two_ans = 0;
@@ -407,5 +403,4 @@ int main() {
         }
     }
     std::println("In total, they are {} units apart.", part_two_ans);
-}
 }
