@@ -44,6 +44,7 @@ void print(grid_t const& g)
 int main()
 {
   read_input();
+  pybind11::scoped_interpreter const guard{};
   std::pair const ans = solve();
   std::cout << "Part one: " << ans.first << "\nPart two: " << ans.second << '\n';
 }
@@ -113,17 +114,21 @@ ii get_start_position(grid_t const& G)
 int64_t fit_polynomial_and_extrapolate(std::vector<int64_t> const& x, std::vector<int64_t> const& y)
 {
   namespace py = pybind11;
-  py::scoped_interpreter const guard{};
-  py::object const scipy_interpolate = py::module::import("scipy.interpolate");
+
+  py::gil_scoped_acquire gil;
+
+  py::object const scipy_interpolate = py::module_::import("scipy.interpolate");
+  py::object const numpy_polynomial = py::module_::import("numpy.polynomial");
+
   py::object const poly =
       scipy_interpolate.attr("lagrange")(py::array_t<int64_t>(x.size(), x.data()),
                                          py::array_t<int64_t>(y.size(), y.data()));
-  //TODO does the call chain leak?
-  py::buffer_info const coef_buf = poly.attr("coef").cast<py::array_t<double>>().request();
+
+  py::array_t<double> const coef_arr = poly.attr("coef").cast<py::array_t<double>>();
+  py::buffer_info const coef_buf = coef_arr.request();
   std::vector<double> coef_vec(static_cast<double*>(coef_buf.ptr),
                                static_cast<double*>(coef_buf.ptr) + coef_buf.size);
   std::ranges::reverse(coef_vec);
-  py::object const numpy_polynomial = py::module::import("numpy.polynomial");
   return std::llround(numpy_polynomial.attr("Polynomial")
                       (py::array_t<double>(coef_vec.size(), coef_vec.data()))
                       (26501365).cast<double>());

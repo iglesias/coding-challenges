@@ -1,0 +1,1 @@
+PYTHONMALLOC=malloc LSAN_OPTIONS=suppressions=lsan.supp ./build/step_counter < step_counter_sample_input.txt

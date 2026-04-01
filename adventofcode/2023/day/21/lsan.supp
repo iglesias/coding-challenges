@@ -1,0 +1,6 @@
+leak:libpython
+leak:_PyObject_Malloc
+leak:_PyMem_RawMalloc
+leak:Py_InitializeFromConfig
+leak:PyRun_
+leak:_PyRuntime
