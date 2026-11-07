@@ -1,0 +1,20 @@
+name: morra
+run-name: ${{ github.actor }} is building morra
+
+on: [push]
+
+jobs:
+  morra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install cmake clang-20 llvm-20
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Build
+        run:  |
+          cd morra && cmake -DCMAKE_CXX_COMPILER=clang++-20 -DENABLE_COVERAGE=ON -DENABLE_TESTING=ON -S . -B build
+          cmake --build build
+          cmake --build build --target ccov
