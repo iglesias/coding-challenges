@@ -3,7 +3,9 @@ run-name: ${{ github.actor }} is building Python extensions with nanobind
 on: [pull_request, push]
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # FIXME: instead of pinning to ubuntu-24.04, could an alternative to
+    # python3.12-dev be used in newer Ubuntu?
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: sh
